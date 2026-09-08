@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.DS_Store
+._*
+# run products, not inputs
+*.xtc
+*.trr
+*.edr
+*.cpt
+*.log
+\#*\#

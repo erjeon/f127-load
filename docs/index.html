@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>f127-load</title>
+<style>
+:root{--navy:#2c3e50;--red:#c0392b;--blue:#2980b9;--grey:#95a5a6;--line:#e3e6e8}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:#1b1f23;font:19px/1.65 -apple-system,"Helvetica Neue",Arial,sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding:56px 24px 96px}
+h1{font-size:44px;margin:0 0 6px;letter-spacing:-.02em}
+.sub{font-size:22px;color:#4a5560;margin:0 0 8px}
+.cite{font-size:17px;color:#6b7680;margin:0 0 40px}
+h2{font-size:27px;margin:52px 0 14px;padding-bottom:8px;border-bottom:3px solid var(--navy)}
+h3{font-size:21px;margin:28px 0 8px;color:var(--navy)}
+p,li{font-size:19px}
+ul{padding-left:22px}
+code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+code{background:#f4f6f7;padding:2px 6px;border-radius:4px;font-size:17px}
+pre{background:#f4f6f7;border:1px solid var(--line);border-radius:8px;padding:16px 18px;
+    overflow-x:auto;font-size:16px;line-height:1.55}
+pre code{background:none;padding:0;font-size:16px}
+.routes{display:flex;gap:18px;flex-wrap:wrap;margin:18px 0}
+.route{flex:1 1 320px;border:1px solid var(--line);border-left:6px solid var(--navy);
+       border-radius:8px;padding:16px 18px;background:#fafbfb}
+.route:last-child{border-left-color:var(--red)}
+.route b{display:block;font-size:20px;margin-bottom:6px}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:18px}
+th,td{border-bottom:1px solid var(--line);padding:9px 10px;text-align:left}
+th{background:#f4f6f7}
+.note{background:#fbf7ef;border-left:6px solid #d9a441;border-radius:8px;padding:14px 18px;margin:20px 0}
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--line);
+       color:#6b7680;font-size:16px}
+a{color:var(--blue)}
+</style></head><body><div class="wrap">
+
+<h1>f127-load</h1>
+<p class="sub">Build and simulate Pluronic F127 micelles loaded with a hydrophobic solute,
+at all-atom resolution, with GROMACS and CHARMM36/CGenFF.</p>
+<p class="cite">Accompanies <i>Entry of a hydrophobic solute into the core interior of
+Pluronic F127 micelles is slow: an all-atom molecular dynamics study</i>.</p>
+
+<h2>What it gives you</h2>
+<ul>
+<li>an equilibrated <b>34-chain F127 micelle</b>, 200 ns, CHARMM36 with TIP3P, ready to load</li>
+<li>a <b>hollow-shell template</b> for enclosing a solute as the micelle closes around it</li>
+<li>a <b>densification step</b> that reaches any polymer concentration without chain overlaps</li>
+<li>an analysis pipeline covering radial density, uptake, RDF, interaction energy,
+    hydration number, SASA, radius of gyration and solute–solute association</li>
+<li>a <b>library</b> of molecules commonly loaded into F127</li>
+</ul>
+
+<h2>Two loading routes</h2>
+<p>Simulations of drug-loaded micelles almost always start with the drug already inside the
+core, so the answer is decided by that choice. This tool builds both ends of the coordinate
+so that the two can be compared.</p>
+<div class="routes">
+<div class="route"><b>Shell closure</b>
+A hollow poly(propylene oxide) shell is closed around solute placed at the centre.
+The solute starts as deep as it can go.</div>
+<div class="route"><b>Uptake from solution</b>
+The solute is dispersed in bulk water and enters unaided.
+This is the situation drug loading actually presents.</div>
+</div>
+
+<h2>Quick start</h2>
+<pre><code>git clone https://github.com/erjeon/f127-load.git
+cd f127-load
+bash 0_check.sh                 # GROMACS, python, force field files
+
+# put a CGenFF topology in library/&lt;name&gt;/ first, then
+python3 -m f127load.check_params library/pyrene    # penalties
+python3 -m f127load.capacity     library/pyrene    # how many will fit
+bash scripts/2_load.sh  pyrene 100 solution
+bash scripts/3_equilibrate.sh
+bash scripts/4_production.sh
+bash scripts/5_analyze.sh</code></pre>
+
+<h2>Molecule library</h2>
+<p>Each entry carries an isomeric SMILES, a 3D structure and, once you have run
+CHARMM-GUI, the CGenFF topology. Stereochemistry is verified against PubChem or the
+RCSB chemical dictionary rather than typed from memory.</p>
+<table>
+<tr><th>molecule</th><th>why it is here</th></tr>
+<tr><td>pyrene</td><td>the polarity probe the accompanying paper uses</td></tr>
+<tr><td>doxorubicin, paclitaxel</td><td>the drugs most often loaded into Pluronics</td></tr>
+<tr><td>aspirin</td><td>small and weakly hydrophobic, a lower bound</td></tr>
+<tr><td>lumogen violet</td><td>a dye, for optical work</td></tr>
+<tr><td>nile red, docetaxel, quercetin, resveratrol</td><td>further test cases</td></tr>
+</table>
+
+<h2>What it does not do</h2>
+<p>It does <b>not</b> generate CGenFF parameters. Use
+<a href="https://charmm-gui.org/?doc=input/ligandrm">CHARMM-GUI Ligand Reader &amp; Modeler</a>
+and drop the downloaded topology into <code>library/&lt;name&gt;/</code>.</p>
+<div class="note">
+<b>Check the penalties before you trust a result.</b>
+<code>check_params</code> reports the CGenFF charge and parameter penalties. For a question
+about where a molecule sits, the <b>charge</b> penalty is what matters, because partitioning
+between a dry core and water is driven by electrostatics. A high dihedral penalty on a rigid
+fused ring is usually harmless. Above about 50 on charge, re-parameterise.
+</div>
+
+<h2>Reproducing the paper</h2>
+<p>The equilibrated micelle, the shell template, the mdp files and the analysis scripts are
+all here. The trajectories themselves are large and are archived separately.</p>
+
+<footer>
+MIT licence. Pukyong National University, NCHM Lab.<br>
+Eunryul Jeon, Dohyun Kim, Minseok Kwak.
+</footer>
+</div></body></html>

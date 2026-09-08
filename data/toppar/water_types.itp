@@ -1,0 +1,8 @@
+; Water atom types for the CHARMM TIP3 model.
+; charmm36.itp as exported by CHARMM-GUI Ligand Reader carries only the
+; types the uploaded molecule needs, so OT and HT are missing and the water
+; topology cannot be read. These two lines supply them.
+
+[ atomtypes ]
+      HT     1     1.0080      0.417     A    4.00013524445e-02    1.924640e-01 
+      OT     8    15.9994     -0.834     A    3.15057422683e-01    6.363864e-01 
