@@ -43,7 +43,7 @@ ATOMIC_MASS = {
 
 # Reference F127 micelle shipped with this tool
 N_CHAINS = 34
-MW_F127 = 12586.0            # g/mol, EO100-PO65-EO100
+MW_F127 = 12586.0            # g/mol, PEO100–PPO65–PEO100
 R_CORE_NM = 3.99             # PPO 90th percentile radius, measured on
                              # data/f127_micelle_34.gro. The accompanying paper
                              # quotes 3.91 nm for a different system, the one
