@@ -307,6 +307,12 @@ there is no network, so they work offline on a cluster node.
   O. Guvench, P. Lopes, I. Vorobyov, and A.D. MacKerell Jr (2010). CHARMM General Force
   Field: A force field for drug-like molecules compatible with the CHARMM all-atom additive
   biological force fields. *J. Comput. Chem.* 31:671-690. DOI: 10.1002/jcc.21367
+* K. Vanommeslaeghe and A.D. MacKerell Jr (2012). Automation of the CHARMM General Force
+  Field (CGenFF) I: bond perception and atom typing. *J. Chem. Inf. Model.* 52:3144-3154.
+  DOI: 10.1021/ci300363c
+* K. Vanommeslaeghe, E.P. Raman, and A.D. MacKerell Jr (2012). Automation of the CHARMM
+  General Force Field (CGenFF) II: assignment of bonded parameters and partial atomic
+  charges. *J. Chem. Inf. Model.* 52:3155-3168. DOI: 10.1021/ci3003649
 * M.J. Abraham, T. Murtola, R. Schulz, S. Páll, J.C. Smith, B. Hess, and E. Lindahl (2015).
   GROMACS: High performance molecular simulations through multi-level parallelism from
   laptops to supercomputers. *SoftwareX* 1-2:19-25. DOI: 10.1016/j.softx.2015.06.001
