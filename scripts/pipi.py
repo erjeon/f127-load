@@ -32,9 +32,7 @@ np.savetxt(f"{out}/assoc_distance.dat", np.column_stack([cd, hd, gd/max(gd.max()
            header="r(nm)  raw_count  N(r)/r^2 (normalised)", fmt="%10.4f")
 np.savetxt(f"{out}/assoc_angle.dat", np.column_stack([ca, ha, ga/max(ga.max(),1e-9)]),
            header="theta(deg)  raw_count  N(t)/sin(t) (normalised)", fmt="%10.4f")
-# With no pair inside the outermost bin every histogram is zero, argmax then
-# returns bin 0 and the ratio divides by zero, so a short run reported a peak
-# separation of 0.01 nm and an enrichment of "nanx". Say what happened instead.
+# with no pair inside the outermost bin there is nothing to report
 if hd.sum() == 0:
     print(f"  no {resn} pair came within {de[-1]:.1f} nm over these {nframes} frame(s), "
           "so there is no association to report")

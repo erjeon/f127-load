@@ -1,20 +1,12 @@
 #!/usr/bin/env python3
 """Find the config the user most likely means, and say which one it is.
 
-The browser page hands you a file through the download folder. Then you have to
-work out where it landed, change to the directory the tool is in, and type a path
-that joins the two. That is three steps between deciding what to build and
-building it, and none of them is about the simulation.
-
 With no argument, look in the current directory first, then in the usual
-download folders, and take the newest file that actually parses as one of these
-configs. Reading the file is what makes this safe: a JSON that is not an f127
-config is skipped rather than half-built.
+download folders, and take the newest file that parses as a config. A JSON
+that is not an f127 config is skipped.
 
     python scripts/find_config.py            the path, on stdout
     python scripts/find_config.py --explain  the path and where it came from
-
-Pukyong National University / NCHM Lab.  Eunryul Jeon <qlsguswjs@pukyong.ac.kr>
 """
 import sys
 import time

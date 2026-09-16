@@ -1,10 +1,8 @@
 """Place solute molecules inside the micelle (shell) or in bulk water (solution).
-usage: place_guest.py host.gro guest.pdb N {shell|soak} out.gro [seed] [box_nm]
+usage: place_guest.py host.gro solute.pdb N {shell|soak} out.gro [seed] [box_nm]
 
 box_nm is the edge of the cubic box the system will end up in. Without it the
-placement radius comes from the host's own box, and a later editconf that
-shrinks the box folds the outermost molecules onto the micelle through the
-periodic boundary. Energy minimisation then diverges on the first step."""
+placement radius comes from the host's own box."""
 import sys, numpy as np
 
 def read_gro(fn):
@@ -52,22 +50,9 @@ def main():
     d = np.linalg.norm(hp-com, axis=1)
     R95 = np.percentile(d, 95)
 
-    # Shrinking the box around an equilibrated structure folds the far corona
-    # back onto the micelle through the periodic boundary. Energy minimisation
-    # then diverges on the first step with an infinite force, which looks like a
-    # force field problem and is not one.
-    #
-    # A corona that reaches past half of its OWN box is not a fault: at
-    # equilibrium the chains interdigitate with their periodic images and the
-    # structure was equilibrated that way. So the test is against the box the
-    # host came in, not against the furthest atom.
+    # The test is against the box the host was equilibrated in, not the furthest
+    # atom: an equilibrated corona reaching past half its own box is normal.
     if box.min() < host_box.min() - 0.05:
-        # This used to raise the box to the host's own size and say so. The next
-        # step then set it straight back to what was asked for, so the message
-        # described something that did not happen and the wrapping it warned
-        # about happened anyway. The requested box is kept, and the warning now
-        # says what the wrapping costs. The paper's own solution-route system
-        # was built this way, in 17.0 nm from a host equilibrated in 25.0 nm.
         out_n = int((d > box.min() / 2).sum())
         print(f"  [warn] the requested {box.min():.1f} nm box is smaller than the"
               f" {host_box.min():.1f} nm the host was equilibrated in, so"
@@ -80,24 +65,19 @@ def main():
               f" a host that is already this dense, compress one with"
               f" densify.py.")
     if mode == 'shell':
-        # the template's hollow is 4.6 nm across, so a guest centre stays
+        # the template's hollow is 4.6 nm across, so a solute centre stays
         # inside 1.5 nm and leaves room for the molecule itself
         rmax = 1.5; lo, hi = 0.0, rmax
         print(f"  shell: centres within {hi:.1f} nm of the middle")
     elif mode == 'soak':
-        # Anywhere in the box that is far enough from the polymer. A radial shell
-        # between the corona and half the box sounds tidier but leaves nothing to
-        # aim at once the micelle fills much of the box, and the aqueous phase is
-        # not a shell anyway: it is the corners as well.
+        # anywhere in the box that is far enough from the polymer, corners
+        # included
         lo = hi = None
         print(f"  solution: anywhere in the water (micelle R95 {R95:.1f} nm, box {box.min():.1f} nm)")
     else: sys.exit("mode must be shell or soak")
 
-    # The clash test used to rebuild a 70,000 by 3 array on every trial, which is
-    # fine for eight small molecules and stalls for twenty large ones. The host
-    # never moves, so it is prepared once. Only host atoms that could possibly
-    # reach the placement region are kept, which for the shell route is a few
-    # thousand out of seventy thousand.
+    # The host never moves, so the clash test is prepared once, keeping only
+    # host atoms that can reach the placement region.
     def _min_dist(ref, xyz, box):
         dd = ref - xyz[:, None, :]
         dd -= box * np.round(dd / box)
@@ -132,9 +112,7 @@ def main():
             u = rng.normal(size=3); u /= np.linalg.norm(u)
             c = com + u * (lo**3 + rng.random()*(hi**3-lo**3))**(1/3)
         xyz = g0 @ rand_rot(rng).T + c
-        # A neighbour tree answers "is anything within 0.28 nm" without forming a
-        # 47 by 70000 by 3 array for every trial, which is what made a shell of
-        # twenty large molecules take longer than the simulation it was preparing.
+        # the neighbour tree answers the clash test without a full distance array
         if tree is not None:
             if tree.query_ball_point(xyz, 0.28, return_length=True).any():
                 continue

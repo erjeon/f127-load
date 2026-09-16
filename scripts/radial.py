@@ -38,11 +38,8 @@ np.savetxt(f"{out}/radial_density.dat",
 np.savetxt(f"{out}/encapsulation.dat", np.array(enc), header=f"time(ns) n_inside_R90 (total {len(guest.residues)})", fmt="%10.3f")
 np.savetxt(f"{out}/nwater.dat", np.array(nwat), header="time(ns) n_water_within_0.35nm", fmt="%10.3f")
 ins = dg[dg < R90]
-# A solute that never reached the core leaves the guest histogram empty. Reading
-# a peak position off it returns the first bin, and the outer-half fraction
-# divides by nothing, so the report read as a broken calculation rather than as
-# a solute that simply stayed outside. Those two lines are only written when
-# there is something inside to describe.
+# the peak position and the outer-half fraction are only written when
+# something is inside
 inside = ins.size
 with open(f"{out}/localisation.txt", "w") as f:
     f.write(f"frames                 {n}\nsamples                {dg.size}\n")
@@ -58,5 +55,5 @@ with open(f"{out}/localisation.txt", "w") as f:
                 f"Its closest approach was {dg.min():.2f} nm against an "
                 f"R_core of {R90:.2f} nm.\n")
         f.write("This is the expected reading for a short run of the solution "
-                "route; uptake in the paper took tens of nanoseconds.\n")
+                "route; uptake takes tens of nanoseconds.\n")
 print(open(f"{out}/localisation.txt").read())

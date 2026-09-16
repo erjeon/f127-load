@@ -16,9 +16,6 @@ behaving like a micelle.  Three separate numbers are reported.
 
 Volumes are van der Waals volumes computed by Monte Carlo integration over
 the union of atomic spheres using Bondi radii.
-
-Copyright (c) Pukyong National University / NCHM Lab
-Eunryul Jeon  <qlsguswjs@pukyong.ac.kr>
 """
 
 from __future__ import annotations
@@ -45,9 +42,7 @@ ATOMIC_MASS = {
 N_CHAINS = 34
 MW_F127 = 12586.0            # g/mol, PEO100–PPO65–PEO100
 R_CORE_NM = 3.99             # PPO 90th percentile radius, measured on
-                             # data/f127_micelle_34.gro. The accompanying paper
-                             # quotes 3.91 nm for a different system, the one
-                             # loaded from solution in a 17 nm box.
+                             # data/f127_micelle_34.gro
 PO_PER_CHAIN = 65
 MW_PO = 58.08                # g/mol, one propylene oxide unit
 RHO_PPO = 1.004              # g/cm3, bulk poly(propylene oxide)
@@ -57,12 +52,8 @@ NA = 6.02214076e23
 # radius cannot be wrapped by the shell during relaxation.
 CAVITY_LIMIT = 0.75
 
-# A cavity has to be larger than the molecules it holds. 1.4 assumes they end up
-# at 71 per cent of the volume, which is between random close packing at 64 and
-# the crystalline limit at 74, so it describes molecules that were stacked
-# rather than dropped. place_guest drops them at random and rejects overlaps,
-# and asked for 54 pyrene in the shell hollow it placed 32. 1.0/0.64 is what
-# random close packing actually allows.
+# A cavity has to be larger than the molecules it holds. 1/0.64 is random close
+# packing, which is what random placement with overlap rejection reaches.
 PACKING_FACTOR = 1.56
 
 
@@ -214,8 +205,6 @@ def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="f127load-capacity",
         description="Estimate how many copies of a solute an F127 micelle can hold.",
-        epilog="Pukyong National University / NCHM Lab.  Eunryul Jeon "
-               "<qlsguswjs@pukyong.ac.kr>",
     )
     parser.add_argument("structures", nargs="+", type=Path,
                         help="solute structure files (.mol2 or .pdb)")

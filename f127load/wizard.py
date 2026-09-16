@@ -5,8 +5,6 @@ Nothing here runs GROMACS. It collects choices, checks each one against what the
 shipped structures and the geometry allow, and writes system.json. `f127 build`
 reads that file, so the same system can be rebuilt later or sent to someone else
 without repeating the questions.
-
-Pukyong National University / NCHM Lab.  Eunryul Jeon <qlsguswjs@pukyong.ac.kr>
 """
 import json
 import sys
@@ -15,11 +13,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# One micelle in a box, with a little water around it. The paper's own
-# solution-route system was built at 17.0 nm, and the micelle needs 17.0 to
-# stay 1.5 nm clear of its own image, so 18 leaves a margin without paying
-# for water nobody reads. At 25 nm the same run costs two and a half times
-# as much and answers the same question.
+# The micelle needs 17.0 nm to stay 1.5 nm clear of its own image, so 18 leaves
+# a margin without paying for extra water.
 DEFAULT_BOX = 18.0
 sys.path.insert(0, str(ROOT))
 from f127load import capacity as cap
@@ -32,9 +27,8 @@ MW_F127 = 12586.0
 NA = 6.02214076e23
 RHO = 1.0                  # g/cm3, the solution. Good to a per cent at these wt%.
 
-# Box edge from the polymer mass fraction. Checked against both systems in the
-# accompanying paper: 34 chains at 4.7 wt% gives 24.7 nm against a real 24.8, and
-# at 14.5 wt% gives 17.0 nm against a real 17.0.
+# Box edge from the polymer mass fraction. 34 chains at 4.7 wt% gives 24.7 nm
+# and at 14.5 wt% 17.0 nm, both within 0.1 nm of the built systems.
 def box_from_wt(n_chains, wt_pct):
     m_poly = n_chains * MW_F127 / NA                 # g
     v_nm3 = (m_poly * 100.0 / wt_pct) / RHO * 1e21   # cm3 -> nm3
@@ -139,14 +133,12 @@ def ion_counts(salts, box_nm):
 def ask_salts(box_nm):
     """One salt, several, or the extracellular mixture.
 
-    A single salt was all the tool allowed, so the ion series the paper actually
-    ran could not be set up with it. Concentrations are asked for one salt at a
-    time, because a mixture is a set of independent concentrations and not a
-    single number.
+    Concentrations are asked for one salt at a time, since a mixture is a set of
+    independent concentrations and not a single number.
     """
     how = choose("ions", [("one", "a single salt"),
                           ("mix", "a mixture, one concentration each"),
-                          ("phys", "extracellular fluid, the mixture used in the paper"),
+                          ("phys", "extracellular fluid, the physiological mixture"),
                           ("none", "none, neutralise only")], 1)
     if how == "none":
         return {}
@@ -184,13 +176,10 @@ def ask_salts(box_nm):
 def penalties(name):
     """Highest CGenFF penalty for a molecule, and the highest charge penalty.
 
-    CHARMM-GUI writes these into the stream files it returns. They say how far
-    the program had to reach by analogy: below 10 the assignment is taken from
-    something closely related, 10 to 50 wants checking against something, and
-    above 50 the parameter was a guess and should be fitted before the number it
-    produces is trusted. The charge penalty matters more than the dihedral one
-    here, because where a solute sits between a dry core and a wet corona is set
-    by its partial charges.
+    CHARMM-GUI writes these into the stream files it returns. Below 10 the
+    assignment came from a close analogue, 10 to 50 wants checking, above 50 it
+    was a guess. The charge penalty matters more here, since partial charges set
+    where a solute sits between core and corona.
     """
     import re
     d = ROOT / "library" / name
@@ -228,24 +217,17 @@ def main():
     ui.banner("f127-load", "Design an F127 micelle system. Enter takes the value in brackets.")
 
     ui.step(1, 5, "The box")
-    # Only the 34-chain structure exists, so the aggregation number is not a
-    # choice and is no longer asked for. With the chain count fixed, the polymer
-    # weight fraction is not an independent quantity either: it is the box edge
-    # said another way, and offering both invited a dilute answer that tripled
-    # the cost of the run for nothing. The box is what is asked, and the weight
-    # fraction is reported back.
+    # Only the 34-chain structure ships, so the chain count is fixed and the
+    # weight fraction follows from the box edge. Only the box is asked.
     n_chains = plan.REF_CHAINS
     g = plan.plan(n_chains)
     host = ROOT / "data" / "f127_micelle_34.gro"
     rmax = r99 = 0.0
     n_out = 0
     if host.exists():
-        # The hard limit was twice the farthest atom, and that atom is the tip
-        # of one stray poly(ethylene oxide) tail. Twenty-four atoms out of 69,802
-        # were setting a 24 nm floor for a micelle whose bulk ends at 8.6 nm. A
-        # tail that reaches past half the box folds back through the boundary,
-        # which is what solvated tails do anyway, so the 99th percentile is used
-        # and the few beyond it are reported rather than forbidden.
+        # The floor comes from the 99th percentile radius, not the farthest atom,
+        # which is the tip of a stray tail. The few beyond it are reported, not
+        # forbidden.
         rmax, r99, n_out = host_extent(host)
         min_box = 2 * r99 + 1.0
         built = True
@@ -339,26 +321,19 @@ def main():
         ui.note(f"this fills {fill:.0f}% of the core. Random close packing is 64%, so it is "
                 f"possible, but it is far above what is loaded experimentally", "warn")
     elif fill > 8:
-        ui.note("the 100-pyrene system in the paper filled 7.4%", "info")
+        ui.note("for reference, 100 pyrene fill 7.4% of the core", "info")
 
     ui.step(5, 5, "Where it starts")
     route = choose("start it", [("solution", "outside, dispersed in water, entering unaided"),
                             ("shell", "inside, with the shell closed around it"),
                             ("both", "both, two simulations built side by side")], 1)
-    # The hollow takes far fewer molecules than the water around it, so one count
-    # cannot serve both routes. Cutting the single count down to what the shell
-    # holds cut the solution system with it, and the pair in the paper is 100 in
-    # solution against 8 inside. The shell count is asked for on its own.
+    # The hollow holds far fewer molecules than the water around it, so the
+    # shell count is asked for on its own.
     n_shell = n_guest
     if route in ("shell", "both"):
-        # The shell route places the solute inside the hollow of
-        # data/f127_shell_template.gro, whose cavity is 4.6 nm across, so the
-        # centre of a molecule stays within 1.5 nm.
-        # The builder was asked for 54 and again for 36 and placed 32 both
-        # times, which is the ceiling for pyrene in this hollow. With the
-        # packing factor now set at random close packing rather than above it,
-        # 0.86 of the radius gives 30, just under that ceiling, which leaves
-        # room for a different random seed without being needlessly shy.
+        # The hollow of data/f127_shell_template.gro is 4.6 nm across, so
+        # molecule centres stay within 1.5 nm. Random placement fills about
+        # 0.86 of that radius.
         USABLE = 0.86
         limit = SHELL_COM_LIMIT * USABLE
         n_max = 0

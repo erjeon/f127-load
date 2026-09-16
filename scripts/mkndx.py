@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
 """Write the index file the run needs, straight from the .gro.
 
-This used to go through MDAnalysis, which meant a node could not build or run a
-system unless it also had the analysis stack installed. Grouping atoms by residue
-name needs nothing but the fixed-format columns, so it is done here directly.
-Only scripts/5_analyze.sh still needs MDAnalysis.
+Grouping atoms by residue name needs nothing but the fixed-format columns, so
+no MDAnalysis is needed here.
 
 Atom numbers in a .gro wrap at 99,999 and a loaded micelle passes that easily, so
 the numbers written here are positions in the file, counted from one, and never
 the numbers printed in the file.
 
     python3 scripts/mkndx.py ions.gro index.ndx
-
-Pukyong National University / NCHM Lab.  Eunryul Jeon <qlsguswjs@pukyong.ac.kr>
 """
 import sys
 
@@ -23,16 +19,9 @@ GROUPS = {
     "W_ION":   {"TIP3", "SOL", "SOD", "CLA", "POT", "CAL", "MG"},
 }
 
-# The two blocks separately, written in addition and overlapping the micelle, so
-# they are kept out of the coverage arithmetic. scripts/5_analyze.sh names core
-# as an energy group for the interaction-energy rerun and it was never written,
-# so grompp stopped with "Group core referenced in the .mdp file was not found
-# in the list of index groups" on every system that was ever analysed. The rerun
-# behind the paper used a hand-made index that had the group.
-# TIP3 was missing for the same reason: an index file supplied with -n replaces
-# the moleculetype names, so "TIP3" in energygrps resolved to nothing even though
-# the topology has a moleculetype by that name. Water and ions are separate here
-# because an interaction energy with the solvent should not count the salt.
+# Written in addition to the groups above and overlapping them, so they are
+# kept out of the coverage check. scripts/5_analyze.sh uses core and water as
+# energy groups; ions are separate so a solvent interaction energy has no salt.
 BLOCKS = {
     "core":   {"PROXS", "PROXR", "PROX"},
     "corona": {"ETHOX", "ETHO"},
@@ -45,7 +34,7 @@ def read_resnames(path):
     with open(path) as fh:
         fh.readline()                       # title
         n = int(fh.readline())
-        # columns 5 to 10 hold the residue name in every gro ever written
+        # columns 5 to 10 hold the residue name
         return [fh.readline()[5:10].strip() for _ in range(n)]
 
 

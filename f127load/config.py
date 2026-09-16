@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 """Read and write the system file.
 
-The system file is JSON, the same shape the browser designer downloads, so a
-config from either source builds the same way. The wizard puts what it would
-have said in a comment column into a "notes" object instead. The older one
-setting per line format (system.cfg) is still read, so old configs still build.
-
-Pukyong National University / NCHM Lab.  Eunryul Jeon <qlsguswjs@pukyong.ac.kr>
+The system file is JSON, the same shape the browser designer downloads. The
+wizard's comments go into a "notes" object. The older one-setting-per-line
+format (system.cfg) is still read.
 """
 import json
 import re

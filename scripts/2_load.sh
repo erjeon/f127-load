@@ -155,9 +155,8 @@ $GMX solvate -cp boxed.gro -cs "$ROOT/data/tip3p.gro" -o solv.gro -p topol.top >
 # be too small, so water placed inside the solute is removed.
 "$PY" "$ROOT/scripts/trim_close_water.py" solv.gro topol.top || exit 1
 # SALTS is "name:cation:anion:n_cation:n_anion:cation_charge" entries separated
-# by commas. genion places one salt per call, so each needs its own grompp, and
-# the cation charge is passed with -pq because genion does not read it from the
-# topology. Neutralising is a separate final pass with sodium and chloride.
+# by commas. genion places one salt per call, with the cation charge given by -pq.
+# Neutralising is a separate final pass with sodium and chloride.
 if [[ -n ${SALTS:-} ]]; then
   IFS=',' read -ra ENTRIES <<< "$SALTS"
   IN=solv.gro

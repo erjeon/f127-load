@@ -15,9 +15,7 @@ def xvg(f):
         except: pass
     return np.array(t), np.array(v)
 def table(f):
-    """loadtxt returns a 1-D array for a single data row, and every reader here
-    then fails on d[:,0]. A short test run produces exactly that file, so this
-    was the first thing anyone trying the tool hit."""
+    """loadtxt returns a 1-D array for a single data row, so it is made 2-D."""
     d = np.loadtxt(f)
     d = np.atleast_2d(d)
     return d if d.size else None
@@ -25,20 +23,18 @@ def fin(ax):
     ax.xaxis.set_major_locator(MaxNLocator(nbins=5)); ax.yaxis.set_major_locator(MaxNLocator(nbins=5))
     for t in ax.get_xticklabels()+ax.get_yticklabels(): t.set_fontweight('bold')
 def key(ax, n):
-    """A legend below the axes. Placed inside, it sat on the core curve in the
-    radial density and on the corona peak in the rdf, and which curve it covered
-    changed with the system, so there is no safe corner to put it in."""
+    """A legend below the axes, where it cannot sit on a curve."""
     ax.legend(frameon=False, ncol=n, loc='upper center', bbox_to_anchor=(0.5, -0.18),
               fontsize=11, handlelength=1.8, columnspacing=1.4)
 
 p=os.path.join(O,'radial_density.dat')
 if os.path.exists(p) and table(p) is not None:
     d=table(p); fig,ax=plt.subplots(figsize=(7,5))
-    for i,(lab,c) in enumerate([('core',NAVY),('corona',BLUE),('guest',RED),('water',GREY)],start=1):
+    for i,(lab,c) in enumerate([('core',NAVY),('corona',BLUE),('solute',RED),('water',GREY)],start=1):
         y=d[:,i]; ax.plot(d[:,0], y/max(y.max(),1e-9), color=c, lw=3, label=lab)
     ax.set_xlabel('r from micelle COM (nm)'); ax.set_ylabel('normalised density')
     fin(ax); key(ax, 4); fig.tight_layout(); fig.savefig(f"{F}/radial_density.png",dpi=200)
-for nm,xl,yl in [('encapsulation','time (ns)','guests inside R$_{core}$'),
+for nm,xl,yl in [('encapsulation','time (ns)','solutes inside R$_{core}$'),
                  ('nwater','time (ns)','water within 0.35 nm')]:
     p=os.path.join(O,f"{nm}.dat")
     if os.path.exists(p):
@@ -48,10 +44,8 @@ for nm,xl,yl in [('encapsulation','time (ns)','guests inside R$_{core}$'),
         ax.plot(d[:,0],d[:,1],color=RED,lw=2.2,marker='o' if len(d)<3 else None); ax.set_xlabel(xl); ax.set_ylabel(yl)
         fin(ax)
         if nm=='encapsulation':
-            # a count, so the axis carries whole numbers. Left to itself a run
-            # where nothing entered was drawn from -0.05 to 0.05, which reads as
-            # a fraction of a molecule. This has to come after fin(), which sets
-            # a locator of its own.
+            # a count, so the axis carries whole numbers. Must come after fin(),
+            # which sets its own locator.
             top=max(int(d[:,1].max()), 1)
             ax.set_ylim(-0.04*top, top*1.12)
             ax.yaxis.set_major_locator(MaxNLocator(integer=True, nbins=min(top+1,6)))
@@ -85,7 +79,7 @@ p=os.path.join(O,'lie.xvg')
 if os.path.exists(p) and xvg(p)[1].size:
     t,v=xvg(p)
     fig,ax=plt.subplots(figsize=(7.5,5))
-    lab=['Coul: guest-core','vdW: guest-core','Coul: guest-water','vdW: guest-water']
+    lab=['Coul: solute-core','vdW: solute-core','Coul: solute-water','vdW: solute-water']
     for i in range(min(4,v.shape[1])):
         ax.plot(t/1000,v[:,i],lw=2,label=lab[i],marker='o' if len(t)<3 else None,
                 color=[RED,NAVY,'#e67e22',GREY][i], ls='--' if i%2==0 else '-')

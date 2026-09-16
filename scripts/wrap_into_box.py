@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
 """Fold whole molecules back inside the box, and say how many atoms moved.
 
-A structure equilibrated in a large box keeps a few chain tips two or three nm
-outside a smaller one. gmx editconf resizes and centres but leaves them there,
-gmx solvate then puts water where they will be once the periodic image is taken,
-and minimisation starts with an infinite force.
+gmx editconf resizes and centres but leaves atoms outside the box where they
+are, and gmx solvate then puts water on top of their periodic images.
 
 Molecules are moved as a whole, by the same shift for every atom in them, so no
 bond is stretched across the boundary. Molecule boundaries come from the residue
 numbering in the file, which for this pipeline is one number per chain.
 
     python wrap_into_box.py in.gro out.gro
-
-Pukyong National University / NCHM Lab.  Eunryul Jeon <qlsguswjs@pukyong.ac.kr>
 """
 import sys
 from pathlib import Path

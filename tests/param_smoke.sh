@@ -54,9 +54,7 @@ $GMX editconf -f lig.pdb -o box.gro -c -d 1.2 -bt cubic >e.log 2>&1 \
 $GMX solvate -cp box.gro -cs spc216.gro -o solv.gro -p topol.top >s.log 2>&1 \
   || fail "solvate" "" s.log
 # gmx solvate writes SOL into the topology, but the CHARMM water moleculetype
-# is called TIP3. Rename it in the topology only. The gro file is fixed format,
-# so a plain substitution there shifts every column by one and grompp rejects
-# the file.
+# is TIP3. Rename it in the topology only; the gro is fixed format.
 sed -i.bak 's/^SOL/TIP3/' topol.top
 NW=$(awk '$1=="TIP3"{print $2}' topol.top | tail -1)
 

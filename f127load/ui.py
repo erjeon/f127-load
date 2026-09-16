@@ -5,8 +5,6 @@ Colour is switched off when the output is not a terminal, so a log file or a
 pipe stays readable. NO_COLOR is honoured. The palette matches the figures in
 the accompanying paper: navy for the core, grey for the corona, blue for water,
 red for the solute.
-
-Pukyong National University / NCHM Lab.  Eunryul Jeon <qlsguswjs@pukyong.ac.kr>
 """
 import os
 import shutil

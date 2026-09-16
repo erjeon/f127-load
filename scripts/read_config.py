@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 """Print the settings the build script needs, one line, space separated.
 
-Kept out of 1_build.sh because a here-document inside a process substitution is
-awkward to get right and impossible to test on its own. This can be run by hand:
+Can be run by hand:
 
     python scripts/read_config.py system.json
-
-Pukyong National University / NCHM Lab.  Eunryul Jeon <qlsguswjs@pukyong.ac.kr>
 """
 import sys
 from pathlib import Path
@@ -20,9 +17,6 @@ SALTS = {"NaCl": ("SOD", "CLA", 1), "KCl": ("POT", "CLA", 1),
 
 
 def main():
-    # A mistyped path used to come back as a nine-line FileNotFoundError
-    # traceback out of pathlib, which reads as a broken tool rather than as a
-    # name that does not exist.
     if len(sys.argv) < 2:
         sys.exit("usage: read_config.py system.json")
     if not Path(sys.argv[1]).is_file():
@@ -38,11 +32,8 @@ def main():
     if not counts:
         counts = {}
         litres = box ** 3 * 1e-24
-        # A molarity reaches here two ways. system.cfg writes it at the top level,
-        # one line per salt; the browser page and anything written by hand put it
-        # inside a "salts" object. Only the first was read, so a config carrying
-        # {"salts": {"NaCl": 0.154}} built a system with no salt in it and said
-        # nothing, and genion's "No ions to add" went to a log.
+        # A molarity reaches here two ways: at the top level, one key per salt,
+        # or inside a "salts" object. Both are read.
         molar = {}
         nested = c.get("salts")
         if isinstance(nested, dict):
@@ -77,10 +68,8 @@ def main():
     if first != "none":
         nested = c.get("salts") if isinstance(c.get("salts"), dict) else {}
         conc = c.get(first, nested.get(first, c.get("salt_M", 0.0)))
-    # How many start inside the hollow, which the shell route holds far fewer of
-    # than the water around it. A settings file written before this existed says
-    # nothing, and then both systems take the same count, which is what used to
-    # happen.
+    # How many start inside the hollow. A config without "inside" uses the same
+    # count for both routes.
     n_inside = c.get("inside", n_guest)
     print(chains, box, first, conc, guest, n_guest, route, spec, n_inside)
 

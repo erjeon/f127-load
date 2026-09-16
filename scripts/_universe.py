@@ -1,19 +1,8 @@
-"""Open a trajectory whose topology MDAnalysis may not be able to read.
+"""Open a trajectory, falling back to a .gro when MDAnalysis cannot read the tpr.
 
-GROMACS 2025 writes tpx 137. MDAnalysis only learned to read that in 2.8, and
-2.4 ships with several distributions still, so the analysis half of this tool
-died on its own output with
-
-    NotImplementedError: Your tpx version is 137, which this parser does not
-    support, yet
-
-A run directory always holds a .gro beside the .tpr, and the analyses here need
-only residue names, atom names and masses. So the tpr is tried first, for its
-exact masses, and a .gro stands in when it cannot be read. Masses are then
-guessed from atom names, which moves a centre of mass by far less than the bin
-width used anywhere in this tool.
-
-Pukyong National University / NCHM Lab.  Eunryul Jeon <qlsguswjs@pukyong.ac.kr>
+GROMACS 2025 writes tpx 137, which MDAnalysis reads only from 2.8. The analyses
+here need only residue names, atom names and masses, so a .gro from the same run
+stands in and masses are guessed from atom names.
 """
 import sys
 import warnings

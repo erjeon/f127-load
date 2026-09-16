@@ -6,13 +6,7 @@ around a fixed configuration overlaps chains instead.
 
     python densify.py in.gro out.gro topol.top 0.10 [salt_M]
 
-Everything that is not water or an ion is kept, so the micelle and whatever it
-carries survive whatever their atom count. An earlier version took the first
-70,010 atoms as the micelle, which was the polymer plus exactly eight pyrene.
-With any other number of solute molecules it cut the rest away without a word:
-28 solutes lost 20 of them.
-
-Pukyong National University / NCHM Lab.  Eunryul Jeon <qlsguswjs@pukyong.ac.kr>
+Everything that is not water or an ion is kept, whatever its atom count.
 """
 import random
 import sys
@@ -84,9 +78,7 @@ def main():
     v_l = m_pol / wt * 1e-3
     n_ion = int(round(salt_m * v_l * NA))
     if n_wat > len(wat):
-        # water is only ever removed, so a target below the box's present
-        # weight fraction cannot be reached. The message used to say the
-        # opposite, that the target was too dense.
+        # water is only ever removed, so a more dilute target cannot be reached
         here = N_CHAINS * MW_F127 / (N_CHAINS * MW_F127 + len(wat) * MW_W)
         sys.exit(f"  [failed] {wt*100:.2f} wt% needs {n_wat} water molecules "
                  f"and the box holds {len(wat)}. This box is already at "
@@ -94,8 +86,7 @@ def main():
                  f"cannot be made more dilute. Build in a larger box instead.")
     print(f"  target   {wt*100:.1f} wt%, {salt_m} M salt -> water {n_wat}, "
           f"{n_ion} of each ion")
-    # one litre is 1e24 cubic nanometres. The figure printed here was three
-    # orders out, which made a 19 nm box read as 1.9 nm.
+    # one litre is 1e24 nm3
     print(f"  the barostat should settle near "
           f"{(v_l * 1e24) ** (1 / 3):.2f} nm")
 

@@ -15,9 +15,6 @@ sees water, and for a question about where a solute sits in a micelle that is
 the more serious of the two.
 
   python3 check_params.py path/to/charmm-gui-output/
-
-Copyright (c) Pukyong National University / NCHM Lab
-Eunryul Jeon  <qlsguswjs@pukyong.ac.kr>
 """
 from __future__ import annotations
 
@@ -67,9 +64,7 @@ def collect(root: Path):
 def main(argv=None):
     ap = argparse.ArgumentParser(
         prog="f127load-check-params",
-        description="Report CGenFF penalties for a parameter set.",
-        epilog="Pukyong National University / NCHM Lab.  "
-               "Eunryul Jeon <qlsguswjs@pukyong.ac.kr>")
+        description="Report CGenFF penalties for a parameter set.")
     ap.add_argument("directory", type=Path,
                     help="CHARMM-GUI output directory for one molecule")
     ap.add_argument("--list", type=float, default=None, metavar="P",

@@ -2,19 +2,15 @@
 """Remove water that gmx solvate placed inside the solute.
 
 solvate keeps a solvent molecule when it clears the solute by the sum of two
-van der Waals radii, and it takes those radii from vdwradii.dat by atom name.
-A CHARMM-GUI topology names atoms in its own way, so for anything past the
-simplest molecule the radii are guessed and come out small: paclitaxel ended up
-with water 0.137 nm from a heavy atom, half a bond length, and minimisation tore
-the molecule apart at the first step.
+van der Waals radii, taken from vdwradii.dat by atom name. Names it does not
+know get a guessed radius that can be too small, leaving water inside the
+solute.
 
 Rather than raise -scale, which would thin the water everywhere including around
 the polymer and change the density, the water that actually sits too close is
 taken out afterwards. Whole molecules only, and the topology count follows.
 
     python trim_close_water.py solv.gro topol.top [cutoff_nm]
-
-Pukyong National University / NCHM Lab.  Eunryul Jeon <qlsguswjs@pukyong.ac.kr>
 """
 import sys
 from pathlib import Path
@@ -56,11 +52,8 @@ def main():
         k = tuple((xyz[i] // cell).astype(int))
         keys.setdefault(k, []).append(i)
 
-    # Which molecule each atom belongs to, by position in the file. The residue
-    # number in a .gro wraps at 99,999 and a box holds 170,000 water molecules,
-    # so keying on that number merged molecules that share one: 759 were found
-    # and only 547 distinct keys came out, and the topology count then did not
-    # match the coordinates.
+    # which molecule each atom belongs to, by position in the file, since the
+    # residue number in a .gro wraps at 99,999
     mol_of = np.empty(len(atoms), dtype=np.int64)
     m, prev = -1, None
     for i, a in enumerate(atoms):

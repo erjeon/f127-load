@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
 """Check every molecule in the library before anything is built.
 
-Each of these went wrong at least once while doxorubicin was being added, and
-each cost a build of several minutes before grompp said so. They are all
-answerable from the files themselves, in a second.
+Every check is answered from the files themselves, without a build.
 
     python scripts/check_library.py [name ...]
-
-Pukyong National University / NCHM Lab.  Eunryul Jeon <qlsguswjs@pukyong.ac.kr>
 """
 import re
 import sys
@@ -51,9 +47,7 @@ def combos(text, sec, n):
 
 def check(lib):
     """(name, problems, resn, atoms, charge). problems is None for a molecule
-    that was never prepared, which is a different thing from a broken one: half
-    the library ships as a structure and nothing else, and printing six
-    [failed] lines for that reads as damage rather than as work not done."""
+    that ships as a structure only, which is not a failure."""
     name = lib.name
     problems = []
     resfile = lib / "RESNAME.txt"
@@ -170,8 +164,7 @@ def main():
     if plain and not wanted:
         print("  A structure-only molecule needs a CHARMM-GUI job. "
               "See library/README.md")
-    # Only a half-prepared molecule is a failure. Six of these shipped as
-    # structures on purpose, so they must not make the check exit non-zero.
+    # a structure-only molecule is not a failure
     return 1 if bad else 0
 
 

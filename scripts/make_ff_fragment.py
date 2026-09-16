@@ -1,45 +1,28 @@
 #!/usr/bin/env python3
-"""Collect the force field lines a guest needs and the polymer does not carry.
+"""Collect the force field lines a solute needs and the polymer does not carry.
 
 CHARMM-GUI returns a topology that names atom types by CGenFF name. The polymer
-force field in data/toppar defines only the types the polymer uses, so a guest
+force field in data/toppar defines only the types the polymer uses, so a solute
 that brings new ones needs them supplied alongside.
 
-The filter is the part that has to be right, and it is wrong in both directions
-if it is written carelessly. Keeping every line that mentions a new type pulls
-in that type's partners, which the molecule never uses and nothing defines, so
-grompp stops on the first one it reads. Keeping only the lines that mention a
-new type is not enough either: the polymer force field defines fourteen bond
-types in all, so a pair of ordinary types the molecule uses, CG311 with OG311
-for instance, is absent as well.
+A line is kept when every type it names is one this molecule uses and the
+combination is one the polymer force field does not already define. Keeping
+every line that mentions a new type would pull in partners nothing defines;
+keeping only lines with a new type would miss ordinary pairs the polymer lacks.
 
-So a line is kept when every type it names is one this molecule uses, and the
-combination is one the polymer force field does not already define.
-
-    python make_ff_fragment.py library/<guest> path/to/charmm36.ff [extra.itp ...]
-
-Pukyong National University / NCHM Lab.  Eunryul Jeon <qlsguswjs@pukyong.ac.kr>
+    python make_ff_fragment.py library/<name> path/to/charmm36.ff [extra.itp ...]
 """
 import sys
 from pathlib import Path
 
-# how many atom types name an interaction in each section. Angles name three,
-# not four: reading four found nothing, so the set of combinations the polymer
-# already defines came out empty and every angle it carries was copied into the
-# fragment as well. grompp then warned on each one.
+# how many atom types name an interaction in each section
 N_NAMED = {"bondtypes": 2, "pairtypes": 2, "angletypes": 3, "dihedraltypes": 4,
            "impropertypes": 4, "cmaptypes": 5}
 SECTIONS = tuple(N_NAMED)
 
 
 def section(text, name):
-    """Every block with this name, joined.
-
-    A CHARMM force field writes dihedraltypes twice, once for the proper
-    dihedrals and once for the impropers. Reading only the first block lost the
-    two torsions doxorubicin needs around its glycosidic oxygen, and grompp then
-    stopped on them with no default type.
-    """
+    """Every block with this name, joined. CHARMM writes dihedraltypes twice."""
     out = []
     for piece in text.split(f"[ {name} ]")[1:]:
         out.append(piece.split("\n[")[0])
@@ -64,13 +47,7 @@ def defined_types(itp):
 
 
 def key(names):
-    """A combination and its reverse are the same interaction, nothing else is.
-
-    Sorting the names instead treats every permutation as one, so a dihedral the
-    polymer happened to define in another order was taken as already covered.
-    Two torsions around the glycosidic oxygen of doxorubicin were dropped that
-    way and grompp stopped on them.
-    """
+    """A combination and its reverse are the same interaction, nothing else is."""
     names = tuple(names)
     return min(names, names[::-1])
 

@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """Turn the CHARMM ion parameters into the GROMACS files the tool ships.
 
-Only sodium and chloride came with the original build, so the ion series that
-the paper actually ran, potassium and the divalent cations, could not be set up
-with the tool. The parameters are in the CHARMM stream file that CHARMM-GUI
-supplies with every job, and they only need converting.
+The parameters are in the CHARMM stream file that CHARMM-GUI supplies with
+every job, and they only need converting.
 
 CHARMM writes epsilon in kcal/mol as a negative number and Rmin/2 in angstrom.
 GROMACS wants sigma in nm and a positive epsilon in kJ/mol, with
@@ -12,21 +10,15 @@ GROMACS wants sigma in nm and a positive epsilon in kJ/mol, with
     sigma = 2 * (Rmin/2) / 2^(1/6) / 10        Rmin/2 in A -> sigma in nm
     epsilon = |eps_kcal| * 4.184
 
-The NBFIX pairs matter as much as the types. CHARMM corrects several cation
-oxygen pairs away from the combination rule, and dropping them changes how
-tightly a cation sits on a poly(ethylene oxide) ether oxygen, which is the
-quantity the ion part of the paper is about.
+The NBFIX pairs are carried across as well, since CHARMM corrects several
+cation oxygen pairs away from the combination rule.
 
     python make_ion_itp.py <toppar_water_ions.str> <outdir> [forcefield.itp]
 
-A pair is only written if both of its types are in the shipped force field.
-grompp refuses a nonbond_params line that names a type the system does not
-define, and for F127 none of the corrections apply anyway: they are written for
-carboxylate, ester and phosphate oxygens, and the ether oxygen of poly(ethylene
-oxide) is OG301, which appears in none of them. Cation and ether oxygen
-therefore interact through the plain combination rule here.
-
-Pukyong National University / NCHM Lab.  Eunryul Jeon <qlsguswjs@pukyong.ac.kr>
+A pair is only written if both of its types are in the shipped force field,
+since grompp refuses a nonbond_params line naming an undefined type. For F127
+none of the corrections apply: they target carboxylate, ester and phosphate
+oxygens, not the ether oxygen OG301.
 """
 import re
 import sys

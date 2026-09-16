@@ -10,8 +10,6 @@ Every relation here is either geometry or is calibrated against a system that
 was actually run, and the calibration is stated where it is used. No value is
 taken from the literature: the experimental range of the aggregation number is
 for the user to supply.
-
-Pukyong National University / NCHM Lab.  Eunryul Jeon <qlsguswjs@pukyong.ac.kr>
 """
 import argparse
 
@@ -21,22 +19,17 @@ REF_R_CORE = 3.99          # nm, PPO 90th percentile, measured on that file
 REF_R_MICELLE = 7.0        # nm, where the corona runs out
 ATOMS_PER_CHAIN = 2053
 
-# Calibrated on the 400 ns solution-loaded run: 34 chains in a 17.0 nm box came
-# to 488,823 atoms. Removing the polymer leaves 419,021 atoms of water and ions,
-# which at 33.4 water molecules per nm3 occupy 4,182 nm3 of the 4,913 nm3 box.
-# The missing 731 nm3 is the volume the polymer denies to water.
+# Calibrated on a 400 ns solution-loaded run: 34 chains in a 17.0 nm box came to
+# 488,823 atoms, of which 419,021 water and ions at 33.4 water/nm3 fill 4,182 of
+# the 4,913 nm3, so the polymer excludes 731 nm3.
 ATOMS_PER_NM3_WATER = 100.1
 EXCLUDED_NM3_PER_REF = 731.0
 
-# Beyond this the system is a large one. It is a note, not a limit.
-# Past this the system is mostly water. It used to sit at 18, which is now the
-# default box, so every ordinary run opened with a warning about itself.
+# Past this the system is mostly water. It is a note, not a limit.
 BOX_WARN_NM = 22.0
 
-# Clearance between the micelle surface and the face of the box. Below this the
-# micelle starts to see its own periodic image through the 1.2 nm cut-off, and
-# the corona of one image interdigitates with the next. The reference system used
-# 17.0 nm for a 7.0 nm micelle, which is exactly 1.5 nm on each side.
+# Clearance between the micelle surface and the box face. Below this the
+# micelle sees its own periodic image through the 1.2 nm cut-off.
 MIN_CLEARANCE_NM = 1.5
 WATER_PAD_NM = 2 * MIN_CLEARANCE_NM
 
