@@ -179,12 +179,14 @@ pip install "MDAnalysis&gt;=2.8" numpy matplotlib
 
 <section>
   <p class="kicker">Library</p>
-  <h2>Molecules with parameters</h2>
-  <p class="prose">pyrene, doxorubicin (neutral and protonated), paclitaxel, docetaxel,
-  curcumin, aspirin, ibuprofen, indomethacin, nile red, quercetin, resveratrol. For anything
-  else, run <a href="https://charmm-gui.org/?doc=input/ligandrm">CHARMM-GUI Ligand Reader</a>,
-  drop the result into <code>library/&lt;name&gt;/</code>, and
-  <code>python3 -m f127load.check_params library/&lt;name&gt;</code> reports the CGenFF penalties.</p>
+  <h2>Molecules</h2>
+  <p class="prose">Ready to run: pyrene, doxorubicin (neutral and protonated), paclitaxel,
+  curcumin, aspirin. Structure only, parameters still to be made: docetaxel, ibuprofen,
+  indomethacin, nile red, quercetin, resveratrol. For those, or anything else, run
+  <a href="https://charmm-gui.org/?doc=input/ligandrm">CHARMM-GUI Ligand Reader</a>, drop the
+  result into <code>library/&lt;name&gt;/</code>, and
+  <code>python3 -m f127load.check_params library/&lt;name&gt;</code> reports the CGenFF penalties.
+  <code>python3 scripts/check_library.py</code> lists the state of every entry.</p>
 </section>
 
 <footer>
