@@ -291,10 +291,7 @@ Nothing else is needed. The browser pages have no dependencies: no server, no li
 no upload. They ask Google Fonts for a typeface and fall back to the system font when
 there is no network, so they work offline on a cluster node.
 
-## Citing
-
-If you use this repository, please cite the accompanying paper and the tools it
-is built on. CHARMM-GUI asks for the first three.
+## References
 
 * S. Jo, T. Kim, V.G. Iyer, and W. Im (2008). CHARMM-GUI: A Web-based Graphical User
   Interface for CHARMM. *J. Comput. Chem.* 29:1859-1865. DOI: 10.1002/jcc.20945
