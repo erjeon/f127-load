@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>f127-load 테스트 안내</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{--bg:#F6F7F9;--ink:#1C2430;--muted:#5E6B7C;--line:#D9DEE6;--panel:#FFFFFF;--code:#EEF1F5;--accent:#1F3A5F;--accent-ink:#FFFFFF;--warn:#C8442D;--ok:#2E7D5B;--tag:#E4EAF3}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141A22;--ink:#E6EAF0;--muted:#9AA6B6;--line:#2A3442;--panel:#1B2431;--code:#0F151D;--accent:#8FB3E0;--accent-ink:#0F151D;--warn:#E0715B;--ok:#6FBF95;--tag:#243040}}
+:root[data-theme="dark"]{--bg:#141A22;--ink:#E6EAF0;--muted:#9AA6B6;--line:#2A3442;--panel:#1B2431;--code:#0F151D;--accent:#8FB3E0;--accent-ink:#0F151D;--warn:#E0715B;--ok:#6FBF95;--tag:#243040}
+body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans KR","IBM Plex Sans",-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;font-size:15px;line-height:1.65;margin:0;padding-block:32px 64px;padding-inline:16px}
+main{max-width:70ch;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1{font-size:1.65rem;font-weight:600;margin:0;letter-spacing:-.01em;text-wrap:balance}
+h1 small{display:block;font-size:.8rem;font-weight:500;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;font-family:"IBM Plex Mono",monospace}
+.lead{color:var(--muted);margin:8px 0 0}
+.need{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.need div{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px;font-size:.9rem}
+.need b{display:block;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;font-family:"IBM Plex Mono",monospace}
+ol.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:22px;counter-reset:s}
+ol.steps>li{counter-increment:s;display:grid;grid-template-columns:44px 1fr;gap:12px}
+ol.steps>li::before{content:counter(s);font-family:"IBM Plex Mono",monospace;font-weight:500;font-size:.95rem;color:var(--accent-ink);background:var(--accent);width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:2px}
+.step h2{font-size:1.08rem;font-weight:600;margin:4px 0 6px}
+.step p{margin:6px 0}
+pre{background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin:8px 0;overflow-x:auto;font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.85rem;line-height:1.55}
+pre.out{border-style:dashed;color:var(--muted)}
+pre.out .ok{color:var(--ok)} pre.out .w{color:var(--warn)} pre.out .hi{color:var(--ink);font-weight:500}
+code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.88em;background:var(--code);padding:1px 5px;border-radius:4px}
+.label{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.note{border-left:3px solid var(--warn);padding:2px 12px;margin:8px 0;color:var(--ink);font-size:.92rem}
+.note.ok{border-color:var(--ok)}
+.or{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.or>div{flex:1 1 220px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px;font-size:.92rem}
+.or b{font-weight:600;display:block;margin-bottom:4px}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+td,th{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-family:"IBM Plex Mono",monospace;font-weight:500}
+.report{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px}
+.report h2{font-size:1.05rem;margin:0 0 8px}
+.report ul{margin:0;padding-left:18px}
+footer{color:var(--muted);font-size:.8rem;border-top:1px solid var(--line);padding-top:12px}
+@media (max-width:480px){ol.steps>li{grid-template-columns:36px 1fr;gap:8px}ol.steps>li::before{width:28px;height:28px;font-size:.85rem}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>다른 컴퓨터에서 도는지 한 번만 확인해 주세요</h1>
+  <p class="lead">F127 미셀에 pyrene을 넣은 GROMACS 시스템을 자동으로 만들어 돌리는 도구입니다. 제 컴퓨터가 아닌 곳에서도 그대로 되는지, 그리고 그 GPU에서 하루에 몇 ns가 나오는지가 알고 싶은 전부입니다. GPU면 1시간 안쪽, 인터넷은 필요 없습니다.</p>
+</header>
+
+<section class="need">
+  <div><b>필요한 것</b>Linux 노드, GROMACS 2019 이상, python3 + numpy</div>
+  <div><b>필요 없는 것</b>인터넷, 관리자 권한, MDAnalysis (분석 단계에만 쓰임)</div>
+  <div><b>걸리는 시간</b>RTX 3090 기준 확인 실행 40분 안팎, 사람 손은 5분. 지금까지 보고된 속도: RTX 5090 106 ns/day, RTX 3090 43, RTX 3070 39</div>
+</section>
+
+<ol class="steps">
+<li><div class="step">
+  <h2>압축을 풀고 폴더에 들어갑니다</h2>
+  <pre>tar xzf f127-load_260916.tar.gz
+cd f127-load</pre>
+  <p>모든 명령은 이 폴더 안에서 <code>./f127 …</code> 로 실행합니다. 다른 곳에서 부르려면 <code>/전체/경로/f127-load/f127 …</code> 처럼 절대경로로 씁니다.</p>
+</div></li>
+
+<li><div class="step">
+  <h2>환경 점검</h2>
+  <pre>./f127 check</pre>
+  <span class="label">이렇게 나오면 정상</span>
+  <pre class="out"><span class="ok">[ ok ]</span> GROMACS 2022.3  (/usr/local/gromacs/bin/gmx)
+<span class="ok">[ ok ]</span> GPU: NVIDIA GeForce RTX 3090  (gmx built with CUDA)
+<span class="ok">[ ok ]</span> Python 3.10  (python3)
+<span class="w">[warn]</span> MDAnalysis is not installed, so `python3` can build and run but not analyse.
+       …  <span class="hi">← 이 경고는 무시해도 됩니다</span>
+<span class="ok">[ ok ]</span> NumPy 1.26.4
+<span class="ok">[ ok ]</span> wrote /…/f127-load/compat.json</pre>
+  <div class="note"><b>no GROMACS binary on PATH</b> 라고 나오면 → <code>source /usr/local/gromacs/bin/GMXRC</code> 한 뒤 다시. <br><b>Permission denied</b> 면 → <code>chmod +x f127</code>.</div>
+</div></li>
+
+<li><div class="step">
+  <h2>설정 파일 <code>system.json</code> 을 하나 만듭니다</h2>
+  <p>세 방법 중 아무거나. 결과 파일은 같습니다.</p>
+  <div class="or">
+    <div><b>A. 브라우저에서 (원래 설명한 방법)</b><code>docs/build.html</code> 을 브라우저로 열고 → 아래쪽까지 원하는 것을 고른 뒤 → <b>Download system.json</b>. 파일은 <code>~/Downloads</code> 에 떨어지고, 옮기지 않아도 됩니다. 4번에서 그 경로를 그대로 적으면 됩니다.</div>
+    <div><b>B. 터미널에서</b><code>./f127 new</code> 를 치면 몇 가지를 묻고 <code>system.cfg</code> 를 써 줍니다. 4번에서 <code>system.json</code> 대신 <code>system.cfg</code> 를 적습니다.</div>
+    <div><b>C. 그냥 복사</b>아래 내용을 <code>system.json</code> 으로 저장. 이 파일이 제가 확인해 본 기본값입니다.
+<pre>{
+  "chains": 34,
+  "box": 18.0,
+  "salts": {"NaCl": 0.154},
+  "guest": "pyrene",
+  "count": 20,
+  "route": "solution"
+}</pre></div>
+  </div>
+</div></li>
+
+<li><div class="step">
+  <h2>실행하고 ns/day 를 읽습니다</h2>
+  <p>성능만 보면 되므로 평형 0.2 ns + 생산 1 ns 로 줄여서 돌립니다. 3090이면 40분 안팎입니다. 시스템 만들기(용매 채우기, 이온 넣기, 최소화)가 먼저 몇 분 걸립니다.</p>
+  <pre>./f127 run ~/Downloads/system.json 1 --npt 0.2</pre>
+  <p>터미널을 닫아도 계속 돌게 하려면:</p>
+  <pre>nohup ./f127 run ~/Downloads/system.json 1 --npt 0.2 &gt; run.out 2&gt;&amp;1 &amp;
+tail -f run.out</pre>
+  <span class="label">이렇게 나오면 정상</span>
+  <pre class="out">  plan: equilibrate 0.2 ns, then produce 1 ns
+        about 0.7 h at 43 ns/day, measured on one RTX 3090
+=== run_pyrene_solution  (20 x pyrene, solution, box 18.0 nm, NaCl:SOD:CLA:541:541:1)
+  using GROMACS version: 2022.3
+  …
+  npt 0.2 ns = 100000 steps
+  final box:   17.89053  17.89053  17.89053
+  1 ns = 500000 steps
+<span class="hi">Performance:       43.118        0.557</span>   <span class="hi">← 첫 숫자가 ns/day 입니다</span>
+done.</pre>
+  <p>결과는 명령을 친 자리에 <code>run_pyrene_solution/</code> 폴더로 남습니다. 성능 줄은 <code>run_pyrene_solution/prod.log</code> 맨 아래에도 있습니다.</p>
+  <div class="note ok">시간이 없으면 <code>./f127 test ~/Downloads/system.json</code> 만 해 주셔도 됩니다. 전 단계를 아주 짧게(0.02 + 0.05 ns) 통과만 시켜서 "여기서 도는가"에는 답이 되고, ns/day 는 부정확합니다.</div>
+</div></li>
+
+<li><div class="step">
+  <h2>알려 주실 것</h2>
+  <div class="report">
+    <ul>
+      <li><code>./f127 check</code> 출력 전체 (복사해서 붙여 주세요)</li>
+      <li><code>Performance:</code> 줄 한 줄</li>
+      <li>노드 이름과 GPU (<code>hostname; nvidia-smi -L</code>)</li>
+      <li>안 됐으면: 화면의 마지막 20줄, 그리고 메시지가 가리키는 로그 파일 (<code>grompp_*.log</code>, <code>em.out</code>, <code>npt.out</code>, <code>prod.out</code> 중 하나)</li>
+    </ul>
+  </div>
+</div></li>
+</ol>
+
+<section>
+  <h2 style="font-size:1.05rem;margin:0 0 8px">막히기 쉬운 곳</h2>
+  <table>
+    <tr><th>증상</th><th>원인과 해결</th></tr>
+    <tr><td><code>no GROMACS binary on PATH</code></td><td>로그인 셸에 gmx가 없음. <code>source /usr/local/gromacs/bin/GMXRC</code> 후 다시 실행. 다른 경로면 <code>GMX=/경로/gmx ./f127 …</code></td></tr>
+    <tr><td><code>[failed] no such config</code></td><td>경로 오타. <code>ls ~/Downloads/*.json</code> 으로 파일 이름 확인. 브라우저에서 저장 이름을 바꿨으면 그 이름으로.</td></tr>
+    <tr><td><code>-nb gpu was requested, but … built without GPU support</code></td><td>그 gmx가 CPU 전용 빌드. 자동으로 피하도록 되어 있지만 뜨면 <code>MDRUN_OPT="-ntmpi 1 -ntomp 16" ./f127 run …</code></td></tr>
+    <tr><td>다른 GROMACS 버전 경고 <code>[warn] another GROMACS is installed</code></td><td>정보용. 처음 잡힌 gmx 하나로 끝까지 가므로 문제 없음.</td></tr>
+    <tr><td>Fmax is large 경고 뒤 계속 진행</td><td>최소화는 됐다는 뜻. 그대로 두면 됩니다.</td></tr>
+    <tr><td>Mac에서 <code>build.html</code> 이 안 열림</td><td>다운로드 파일 보안 경고. 우클릭 → 열기, 또는 브라우저 창에 파일을 끌어다 놓기.</td></tr>
+  </table>
+</section>
+
+<footer>f127-load · Pukyong National University NCHM Lab · 전은렬 (qlsguswjs@pukyong.ac.kr) · 2026-09-16</footer>
+</main>
+</body>
+</html>

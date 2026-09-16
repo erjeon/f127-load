@@ -275,7 +275,7 @@ def main(argv=None):
                        f"{100 * CAVITY_LIMIT:.0f}% limit. The shell will not "
                        f"close. Run capacity.py to see the ceiling.")
             if not args.force:
-                sys.exit("[FAIL] " + message)
+                sys.exit("[failed] " + message)
             log("WARNING (forced): " + message)
 
         removed = water_to_remove(universe, centre, r_cavity)

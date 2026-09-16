@@ -1,28 +1,66 @@
 #!/usr/bin/env bash
-# 표준 분석 8종 + PNG.   bash scripts/5_analyze.sh run_dir [--begin ps]
-# ★ --begin 은 반드시 평형 도달 이후로 줄 것. 전 구간 평균은 코어 밀도에 인공물을 만든다.
-set +u; source ${GMXRC:-/usr/local/gromacs/bin/GMXRC} 2>/dev/null || true; set -uo pipefail
-GMX=${GMX:-gmx}; ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# The eight standard analyses, plus figures.  bash scripts/5_analyze.sh run_dir [--begin ps]
+# --begin must sit after equilibration. Averaging the whole trajectory mixes the
+# collapsing structure with the equilibrated one and puts a hole in the core density.
+# Sourcing a GMXRC unconditionally put GROMACS 2022.3 in front of a 2025.4
+# already on PATH, and trjconv then refused the 2025 tpr it was handed.
+source "$(dirname "${BASH_SOURCE[0]}")/_gmxenv.sh"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 D=${1:?run_dir}; shift; BEG=0
 while [[ $# -gt 0 ]]; do case $1 in --begin) BEG=$2; shift 2;; *) shift;; esac; done
 cd "$D"; O=results; mkdir -p $O
-RESN=$(awk '/^\[ molecules/{f=1;next} f&&NF==2&&$1!="S1P1"&&$1!="TIP3"&&$1!="SOD"&&$1!="CLA"{print $1;exit}' topol.top)
+gmx_line
+# Every analysis below imports MDAnalysis, and the pbc step that feeds them takes
+# minutes. Finding out afterwards that the import fails is the worst order.
+"$PY" -c "import MDAnalysis, matplotlib" 2>/dev/null || {
+  echo "  [failed] $PY cannot import MDAnalysis and matplotlib."
+  echo "           The simulation is fine, only the analysis needs them."
+  echo "           pip install \"MDAnalysis>=2.8\" matplotlib   in a virtual environment,"
+  echo "           or point at one you have:  PYTHON=/path/to/venv/bin/python"
+  exit 1
+}
+# POT, CAL and MG were missing from this list. They happen to sit after the guest
+# in [ molecules ], so the first match is still right, but only by position.
+RESN=$(awk '/^\[ *molecules/{f=1;next}
+            f && NF==2 && $1!="S1P1" && $1!="TIP3" && $1!="SOL" && $1!="SOD" &&
+            $1!="CLA" && $1!="POT" && $1!="CAL" && $1!="MG" {print $1; exit}' topol.top)
 echo "  guest = $RESN, begin = $BEG ps"
 
 if [[ ! -s $O/proc.xtc ]]; then
-  echo "[1/8] PBC 보정"
-  echo System | $GMX trjconv -s prod.tpr -f prod.xtc -n index.ndx -pbc whole -o $O/whole.xtc >$O/pbc1.log 2>&1
-  printf 'micelle\nSystem\n' | $GMX trjconv -s prod.tpr -f $O/whole.xtc -n index.ndx -pbc mol -center -o $O/proc.xtc >$O/pbc2.log 2>&1
+  echo "[1/8] periodic boundary"
+  # Everything downstream reads proc.xtc. When this step failed the remaining
+  # seven ran anyway, each writing only a log saying the file was missing, and
+  # the run ended with no figures and no error.
+  echo System | $GMX trjconv -s prod.tpr -f prod.xtc -n index.ndx -pbc whole -o $O/whole.xtc >$O/pbc1.log 2>&1 \
+    || { echo "  [failed] trjconv -pbc whole. See $O/pbc1.log"; exit 1; }
+  printf 'micelle\nSystem\n' | $GMX trjconv -s prod.tpr -f $O/whole.xtc -n index.ndx -pbc mol -center -o $O/proc.xtc >$O/pbc2.log 2>&1 \
+    || { echo "  [failed] trjconv -pbc mol -center. See $O/pbc2.log"; exit 1; }
   rm -f $O/whole.xtc
 fi
-echo "[2/8] Rg";   echo micelle | $GMX gyrate -s prod.tpr -f $O/proc.xtc -n index.ndx -b $BEG -o $O/rg.xvg   >$O/rg.log 2>&1
-echo "[3/8] SASA"; echo micelle | $GMX sasa   -s prod.tpr -f $O/proc.xtc -n index.ndx -b $BEG -o $O/sasa.xvg -dt 200 >$O/sasa.log 2>&1
-echo "[4/8] RDF";  $GMX rdf -s prod.tpr -f $O/proc.xtc -n index.ndx -ref $RESN -sel core corona TIP3 -b $BEG -bin 0.02 -o $O/rdf.xvg >$O/rdf.log 2>&1
-echo "[5/8] 반경 밀도 · 담지율 · 수화수"
-python3 "$ROOT/scripts/radial.py" prod.tpr $O/proc.xtc $RESN $BEG $O || echo "  (radial 실패)"
-echo "[6/8] guest-guest 회합"
-python3 "$ROOT/scripts/pipi.py" prod.tpr $O/proc.xtc $RESN $BEG $O || echo "  (pipi 실패)"
-echo "[7/8] 상호작용 에너지 (rerun)"
+[[ -s $O/proc.xtc ]] || { echo "  [failed] $O/proc.xtc was not written"; exit 1; }
+# These three wrote their errors to a log nobody read and the run carried on,
+# which is how the RDF and the interaction energy came to be broken for every
+# system without anyone noticing. core, corona and water are written by
+# scripts/mkndx.py; TIP3 was asked for here and never existed, because an index
+# supplied with -n replaces the moleculetype names.
+echo "[2/8] Rg"
+echo micelle | $GMX gyrate -s prod.tpr -f $O/proc.xtc -n index.ndx -b $BEG -o $O/rg.xvg >$O/rg.log 2>&1 \
+  || echo "  [failed] gyrate. See $D/$O/rg.log"
+echo "[3/8] SASA"
+echo micelle | $GMX sasa -s prod.tpr -f $O/proc.xtc -n index.ndx -b $BEG -o $O/sasa.xvg -dt 200 >$O/sasa.log 2>&1 \
+  || echo "  [failed] sasa. See $D/$O/sasa.log"
+echo "[4/8] RDF"
+$GMX rdf -s prod.tpr -f $O/proc.xtc -n index.ndx -ref $RESN -sel core corona water -b $BEG -bin 0.02 -o $O/rdf.xvg >$O/rdf.log 2>&1 \
+  || { echo "  [failed] rdf. See $D/$O/rdf.log"
+       grep -A3 -m1 -iE "fatal|inconsistency" $O/rdf.log | sed 's/^/      /'; }
+echo "[5/8] radial density, uptake, hydration"
+"$PY" "$ROOT/scripts/radial.py" prod.tpr $O/proc.xtc $RESN $BEG $O || echo "  (radial failed)"
+echo "[6/8] solute-solute association"
+# one solute cannot associate with anything, which is a fact about the system
+# and not a failure of the analysis
+"$PY" "$ROOT/scripts/pipi.py" prod.tpr $O/proc.xtc $RESN $BEG $O \
+  || echo "  (skipped, see the line above)"
+echo "[7/8] interaction energy, by rerun"
 if [[ ${DO_LIE:-1} == 1 ]]; then
   cat > $O/rerun.mdp <<'M'
 integrator = md
@@ -37,12 +75,12 @@ coulombtype = PME
 rcoulomb = 1.2
 constraints = h-bonds
 M
-  echo "energygrps = $RESN core TIP3" >> $O/rerun.mdp
+  echo "energygrps = $RESN core water" >> $O/rerun.mdp
   $GMX grompp -f $O/rerun.mdp -c npt.gro -p topol.top -n index.ndx -o $O/rerun.tpr -maxwarn 5 >$O/grompp_rerun.log 2>&1 \
-   && $GMX mdrun -s $O/rerun.tpr -rerun $O/proc.xtc -e $O/rerun.edr -g $O/rerun.log -nb cpu -ntmpi 1 -ntomp 16 >$O/rerun.out 2>&1 \
-   && printf "Coul-SR:$RESN-core\nLJ-SR:$RESN-core\nCoul-SR:$RESN-TIP3\nLJ-SR:$RESN-TIP3\n\n" \
-      | $GMX energy -f $O/rerun.edr -o $O/lie.xvg >$O/energy.log 2>&1 || echo "  (LIE 실패)"
+   && $GMX mdrun -s $O/rerun.tpr -rerun $O/proc.xtc -e $O/rerun.edr -g $O/rerun.log -nb cpu -ntmpi 1 -ntomp $NTOMP >$O/rerun.out 2>&1 \
+   && printf "Coul-SR:$RESN-core\nLJ-SR:$RESN-core\nCoul-SR:$RESN-water\nLJ-SR:$RESN-water\n\n" \
+      | $GMX energy -f $O/rerun.edr -o $O/lie.xvg >$O/energy.log 2>&1 || echo "  (LIE failed)"
 fi
-echo "[8/8] 그림"
-python3 "$ROOT/scripts/plot_all.py" $O || echo "  (plot 실패)"
+echo "[8/8] figures"
+"$PY" "$ROOT/scripts/plot_all.py" $O || echo "  (plot failed)"
 ls -la $O/*.xvg $O/*.dat $O/figures/*.png 2>/dev/null | tail -20

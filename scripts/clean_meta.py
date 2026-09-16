@@ -1,4 +1,7 @@
-"""제출 전 문서/이미지 메타데이터 정리. 템플릿 잔재와 도구 흔적을 지운다."""
+"""Strip metadata from documents and images before submission.
+
+Removes what the template left behind and what the tools that made the files
+wrote about themselves."""
 import sys, os, re, zipfile, shutil, tempfile
 
 CORE_SET = {
@@ -43,7 +46,7 @@ def clean_png(path):
     im = Image.open(path); data = list(im.getdata()); m = im.mode; sz = im.size
     dpi = im.info.get('dpi',(600,600))
     im2 = Image.new(m,sz); im2.putdata(data)
-    im2.save(path, dpi=dpi)          # info 없이 재저장
+    im2.save(path, dpi=dpi)          # save again with no info block
     return True
 
 if __name__ == '__main__':

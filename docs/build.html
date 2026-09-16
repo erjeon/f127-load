@@ -1,0 +1,1046 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>f127-load designer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --paper:#ffffff; --surface:#f5f6f6; --ink:#000000; --muted:#4a5257; --band:#eef2f5;
+  --rule:#d8dcde;
+  --core:#2c3e50; --corona:#95a5a6; --water:#2980b9; --solute:#c0392b; --ok:#2e7d4f;
+  --sans:"IBM Plex Sans",-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{color-scheme:light}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+     font-size:19px;line-height:1.6}
+.wrap{max-width:960px;margin:0 auto;padding:52px 30px 110px}
+h1{font-family:var(--mono);font-size:40px;letter-spacing:-.03em;margin:0 0 6px;font-weight:600}
+h2{font-size:26px;margin:0 0 6px;font-weight:600}
+.kicker{font-family:var(--mono);font-size:15px;color:var(--muted);margin:0 0 10px}
+.lede{font-size:21px;color:var(--muted);margin:0 0 40px;max-width:60ch}
+a{color:var(--water)}
+
+.grid{display:grid;grid-template-columns:1fr 340px;gap:34px;align-items:start}
+@media (max-width:860px){
+  .grid{grid-template-columns:1fr}
+  /* stacked, the panel is no longer beside anything, so pinning it to the
+     window height would only put a second scrollbar inside the page */
+  .panel{position:static;max-height:none;overflow:visible}
+  .panelscroll{overflow:visible}
+  .panelfoot{border-top:none;padding-top:0}
+}
+
+/* A rule drawn across the top of a fieldset runs out from either side of the
+   legend and leaves a line hanging in the margin. A soft band behind the
+   heading marks the step without drawing anything that has to be interrupted. */
+fieldset{border:none;margin:0 0 34px;padding:0}
+legend{padding:10px 16px;font-size:21px;font-weight:600;width:100%;
+  box-sizing:border-box;background:var(--band);border-radius:6px;
+  margin:0 0 18px;display:flex;align-items:baseline;gap:12px}
+i.q{font-style:normal;font-family:var(--mono);font-size:13px;color:var(--muted);
+  border:1px solid var(--rule);border-radius:50%;width:17px;height:17px;
+  display:inline-flex;align-items:center;justify-content:center;margin-left:8px;
+  cursor:help;position:relative;vertical-align:middle;opacity:.55}
+i.q:hover{opacity:1;border-color:var(--water);color:var(--water)}
+i.q::after{content:attr(data-tip);position:absolute;left:22px;top:-4px;width:270px;
+  padding:9px 11px;background:var(--ink);color:var(--paper);border-radius:6px;
+  font-family:inherit;font-size:14px;line-height:1.45;font-weight:400;
+  opacity:0;pointer-events:none;transition:opacity .12s;z-index:20;text-align:left}
+i.q:hover::after{opacity:1}
+legend span{font-family:var(--mono);color:var(--water);font-size:16px;
+  font-weight:600;min-width:1.2em}
+.hint{color:var(--muted);font-size:17px;margin:6px 0 16px;max-width:62ch}
+label.row{display:flex;align-items:center;gap:14px;margin:12px 0;flex-wrap:wrap}
+label.row > span.lab{min-width:190px;color:var(--muted);font-size:17px}
+input[type=number],select{font-family:var(--mono);font-size:18px;padding:8px 10px;
+  border:1px solid var(--rule);border-radius:5px;background:var(--paper);color:var(--ink);
+  min-width:130px}
+input[type=number]:focus,select:focus{outline:2px solid var(--water);outline-offset:1px}
+.radios{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.radios label{display:flex;gap:11px;align-items:flex-start;cursor:pointer;font-size:18px}
+.radios small{display:block;color:var(--muted);font-size:16px;line-height:1.45}
+.unit{color:var(--muted);font-family:var(--mono);font-size:16px}
+
+/* The panel was sticky but had no height, so once the readings outgrew the
+   window its foot, and the download button with it, sat below the fold and
+   could only be reached by scrolling the page past the panel. It is now as tall
+   as the window, the readings scroll inside it, and the button stays put. */
+.panel{position:sticky;top:26px;border:1px solid var(--rule);border-radius:8px;
+       background:var(--surface);display:flex;flex-direction:column;
+       max-height:calc(100vh - 52px);overflow:hidden}
+.panel>.pv,.panel>.pvcap{flex:none;margin-left:22px;margin-right:22px}
+.panel>.pv{margin-top:22px}
+.panelscroll{flex:1 1 auto;overflow-y:auto;overscroll-behavior:contain;
+             padding:0 22px 4px;scrollbar-width:thin}
+.panelfoot{flex:none;padding:14px 22px 18px;border-top:1px solid var(--rule);
+           background:var(--surface)}
+.panelfoot button{width:100%}
+/* The file went out as system.json whatever it held, so a second design
+   overwrote the first in the downloads folder. The stem is editable; the
+   extension is not, because the reader runs it by name. */
+.namerow{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:15px}
+.namerow>span{color:var(--muted);flex:none}
+.namerow input{flex:1 1 auto;min-width:0;font-family:var(--mono);font-size:14px;
+               padding:7px 9px;border:1px solid var(--rule);border-radius:5px;
+               background:var(--surface);color:inherit}
+.namerow .ext{font-family:var(--mono);color:var(--muted)}
+/* the panel is 340 px wide, so the command ran off the side and grew a
+   scrollbar of its own. It wraps here instead. */
+.panelfoot pre{margin:10px 0 0;padding:12px 14px;font-size:13.5px;line-height:1.6;
+               white-space:pre-wrap;overflow-wrap:anywhere;overflow-x:visible}
+/* The heading sits above the scrolling readings, so it carries the same side
+   padding as they do and a background of its own. Without the background the
+   readings ran up underneath it as they scrolled; without the padding it sat
+   flush to the panel edge while everything under it was inset. The indent used
+   to be set here and then reset by a later rule, which is why it was flush. */
+.panel>h3{flex:none;margin:0;padding:0 22px 12px;font-size:19px;font-weight:600;
+          background:var(--surface);position:relative;z-index:1}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:6px 0;
+    border-bottom:1px dotted var(--rule);font-size:17px}
+.kv:last-of-type{border-bottom:none}
+.kv b{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:600}
+.kv.warnv b{color:var(--solute)}
+.msg{margin:14px 0 0;padding:11px 13px;border-radius:6px;font-size:16px;line-height:1.5}
+
+details.notes{margin:10px 0 0;border-left:3px solid var(--line);padding:0 0 0 12px}
+details.notes>summary{cursor:pointer;color:var(--muted);font-size:14px;padding:4px 0;
+  list-style:none;user-select:none}
+details.notes>summary::-webkit-details-marker{display:none}
+details.notes>summary::before{content:"+ ";font-weight:700}
+details.notes[open]>summary::before{content:"\2212 "}
+details.notes>p{margin:6px 0;color:var(--muted);font-size:14px;line-height:1.5}
+.msg.warn{background:#fdf1ec;border-left:3px solid var(--solute)}
+.msg.info{background:#eef3f7;border-left:3px solid var(--water)}
+.msg.ok{background:#eef6f0;border-left:3px solid var(--ok)}
+button{font-family:var(--sans);font-size:18px;font-weight:600;padding:12px 18px;
+  border:none;border-radius:6px;background:var(--core);color:#fff;cursor:pointer;
+  width:100%;margin-top:18px}
+button:hover{background:#22303e}
+button:focus-visible{outline:2px solid var(--water);outline-offset:2px}
+pre{font-family:var(--mono);background:var(--surface);border:1px solid var(--rule);
+    border-radius:6px;padding:16px 18px;overflow-x:auto;font-size:15px;line-height:1.7;
+    margin:14px 0 0}
+code{font-family:var(--mono);font-size:.87em;background:var(--surface);padding:1px 5px;
+     border-radius:3px}
+
+details{border-top:1px solid var(--rule);padding:13px 0 2px;margin-top:16px}
+details summary{cursor:pointer;font-weight:500;font-size:17px;list-style:none;
+  display:flex;gap:9px;color:var(--muted)}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"+";font-family:var(--mono);color:var(--water);width:13px}
+details[open] summary::before{content:"–"}
+details .body{padding:14px 0 4px 22px;max-width:64ch;font-size:17px}
+
+.pv{border:1px solid var(--rule);border-radius:6px;background:#fff;overflow:hidden;
+     margin:0 0 16px}
+#pcv{display:block;width:100%;height:250px;cursor:grab}
+#pcv.drag{cursor:grabbing}
+.pvcap{font-size:14px;color:var(--muted);margin:8px 0 0;line-height:1.45}
+.pvcap b{color:var(--ink);font-weight:600}
+.viewer{margin-top:44px;border-top:2px solid var(--core);padding-top:18px}
+.vwrap{position:relative;border:1px solid var(--rule);border-radius:8px;
+       background:#fbfbfb;overflow:hidden}
+#cv{display:block;width:100%;height:520px;cursor:grab;touch-action:none}
+#cv.drag{cursor:grabbing}
+.drop{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      flex-direction:column;gap:10px;color:var(--muted);font-size:18px;text-align:center;
+      pointer-events:none;padding:20px}
+.drop b{color:var(--ink);font-size:20px}
+.vbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-top:14px}
+.vbar button{width:auto;margin:0;padding:9px 15px;font-size:16px;background:var(--surface);
+             color:var(--ink);border:1px solid var(--rule)}
+.vbar button:hover{background:#e9ebec}
+.vbar label{display:flex;gap:7px;align-items:center;font-size:16px;color:var(--muted)}
+.vlegend{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:12px;font-family:var(--mono);
+         font-size:15px;color:var(--muted)}
+.vlegend span{display:flex;align-items:center;gap:8px}
+.vlegend i{width:13px;height:13px;border-radius:50%;display:block}
+.vstat{font-family:var(--mono);font-size:15px;color:var(--muted);margin-top:10px}
+footer{margin-top:60px;padding-top:22px;border-top:1px solid var(--rule);
+       color:var(--muted);font-family:var(--mono);font-size:15px;line-height:1.8}
+
+/* A reader who arrives at the page from a link has no way back to the code it
+   describes, so both pages carry the same line at the foot. */
+.repo{margin:44px 0 0;padding:18px 0 0;border-top:1px solid var(--rule);
+      font-size:15px;color:var(--muted);display:flex;gap:18px;flex-wrap:wrap}
+.repo a{color:inherit}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<p class="kicker">f127-load</p>
+<h1>Design a system</h1>
+<p class="lede">Pick what you want and this works out the rest, then hands you a
+<code>system.json</code>. Give that file to <code>./f127 run</code> in a terminal and the
+system gets built. Nothing runs here.</p>
+
+<div class="grid">
+<form id="f">
+
+  <fieldset>
+    <legend><span>1</span>The box</legend>
+    <p class="hint">One micelle sits in the box, and only the 34-chain structure ships, so
+    the box edge is the size to choose. It decides how much water surrounds the micelle,
+    and water is most of the cost.</p>
+    <label class="row"><span class="lab">chains</span>
+      <input type="number" id="n" value="34" min="34" max="34" step="1" readonly>
+      <span class="unit">fixed<i class="q" data-tip="Only the
+      34-chain micelle ships. Another number needs CHARMM-GUI or a
+      coarse-grained assembly, neither of which is in here.">!</i></span></label>
+    <label class="row"><span class="lab">box edge</span>
+      <input type="number" id="box" value="18.0" min="5" max="60" step="0.1">
+      <span class="unit">nm<i class="q" data-tip="17 nm is the least that keeps the
+      micelle 1.5 nm clear of its own periodic image. 18 leaves a margin. Every
+      nanometre past that is water.">!</i></span></label>
+    <label class="row"><span class="lab">polymer</span>
+      <input type="number" id="wt" value="10.9" min="0.5" max="40" step="0.1" readonly>
+      <span class="unit">wt%, follows the box<i class="q" data-tip="With the chain count
+      fixed the polymer mass does not change, so the volume sets the weight fraction.
+      It is a reading here, not a setting. For a genuinely concentrated system, remove
+      water from an equilibrated box with scripts/densify.py.">!</i></span></label>
+  </fieldset>
+
+  <fieldset>
+    <legend><span>2</span>Ions</legend>
+    <p class="hint">Set as many as are wanted. Zero leaves a salt out. The button
+    fills in extracellular fluid, which is the mixture the paper used.</p>
+    <label class="row"><span class="lab">NaCl</span>
+      <input type="number" class="salt" id="NaCl" value="0.154" min="0" max="1" step="0.001">
+      <span class="unit" id="u-NaCl">M</span></label>
+    <label class="row"><span class="lab">KCl</span>
+      <input type="number" class="salt" id="KCl" value="0" min="0" max="1" step="0.0001">
+      <span class="unit" id="u-KCl">M</span></label>
+    <label class="row"><span class="lab">CaCl<sub>2</sub></span>
+      <input type="number" class="salt" id="CaCl2" value="0" min="0" max="1" step="0.0001">
+      <span class="unit" id="u-CaCl2">M</span></label>
+    <label class="row"><span class="lab">MgCl<sub>2</sub></span>
+      <input type="number" class="salt" id="MgCl2" value="0" min="0" max="1" step="0.0001">
+      <span class="unit" id="u-MgCl2">M</span></label>
+    <label class="row"><span class="lab"></span>
+      <button type="button" id="phys">extracellular fluid</button>
+      <button type="button" id="nosalt">none</button></label>
+  </fieldset>
+
+  <fieldset>
+    <legend><span>3</span>The solute</legend>
+    <p class="hint">Only molecules with a topology are listed. For anything else, put the output of
+    CHARMM-GUI Ligand Reader and Modeler into <code>library/&lt;name&gt;/</code>.</p>
+    <label class="row"><span class="lab">molecule</span>
+      <select id="guest"></select></label>
+  </fieldset>
+
+  <fieldset>
+    <legend><span>4</span>How much</legend>
+    <label class="row"><span class="lab">give it as</span>
+      <select id="mode">
+        <option value="count">a number of molecules</option>
+        <option value="mM">a concentration in mM</option>
+        <option value="wt">wt% of the polymer</option>
+      </select>
+      <input type="number" id="amt" value="8" min="1" step="1"></label>
+  </fieldset>
+
+  <fieldset>
+    <legend><span>5</span>Where it starts</legend>
+    <div class="radios">
+      <label><input type="radio" name="route" value="solution" checked>
+        <span>Outside<small>Dispersed in bulk water, entering unaided. This is the
+        situation drug loading actually presents.</small></span></label>
+      <label><input type="radio" name="route" value="shell">
+        <span>Inside<small>A hollow shell is closed around it. The solute starts as deep
+        as it can go.</small></span></label>
+      <label><input type="radio" name="route" value="both">
+        <span>Both<small>Two simulations built side by side, one of each. Only the starting
+        point differs, which is what makes the comparison mean something.</small></span></label>
+    </div>
+
+    <div id="split" hidden>
+      <p class="hint" style="margin:14px 0 6px"><b>Two simulations, not one split in half.</b>
+      Each is built with the amount below, so 4 and 4 means two boxes holding four molecules
+      each, one starting in the water and one starting in the hollow. They match by default,
+      which is what makes the pair comparable; the only reason to part them is that the
+      hollow holds far fewer than the water around it. Counts, whatever unit the amount
+      above was given in, because the hollow's limit is a count.</p>
+      <label class="row"><span class="lab">in the water</span>
+        <input type="number" id="nOut" value="8" min="1" step="1">
+        <span class="unit" id="outNote">molecules</span></label>
+      <label class="row"><span class="lab">in the hollow</span>
+        <input type="number" id="nIn" value="8" min="1" step="1">
+        <span class="unit" id="inNote">molecules</span></label>
+    </div>
+  </fieldset>
+
+  <details>
+    <summary>Where these numbers come from</summary>
+    <div class="body">
+      <p>The weight fraction follows from the box edge, not the other way round. The
+      relation was checked against both systems in the accompanying paper: 34 chains in a
+      24.8 nm box comes to 4.7 wt%, and in a 17.0 nm box to 14.5 wt%.</p>
+      <p>Core volume goes as the number of chains, so the core radius goes as its cube root,
+      scaled from the 3.99 nm measured on the shipped structure. The corona is one
+      poly(ethylene oxide) block long however many chains there are, so its 3.0 nm is
+      carried across rather than scaled.</p>
+      <p>The atom count is calibrated on the same run: 34 chains in a 17.0 nm box came to
+      488,823 atoms, and this reproduces it to 0.08 per cent.</p>
+      <p>The limit on the inside route is the radius the solute occupies when packed
+      together, its vdW volume times 1.4, against the 1.5 nm hollow in the shell
+      template.</p>
+    </div>
+  </details>
+  <details>
+    <summary>Using a size other than the one that ships</summary>
+    <div class="body">
+      <p>Only 34 chains ship with the tool. Another aggregation number has to be assembled
+      by the shell route, and that is not in <code>./f127 build</code> yet. For now, 34 is
+      the one to use.</p>
+      <p>For a smaller box, compress with <code>scripts/densify.py</code>, which removes water
+      and lets the barostat do the work, then use that structure as the host. Putting a
+      small box around an equilibrated structure folds the corona through the periodic
+      boundary, and energy minimisation diverges on the first step.</p>
+    </div>
+  </details>
+</form>
+
+<aside class="panel">
+  <div class="pv"><canvas id="pcv"></canvas></div>
+  <p class="pvcap" id="pvcap"></p>
+  <h3>What you get</h3>
+  <div class="panelscroll">
+    <div id="out"></div>
+    <div id="msgs"></div>
+  </div>
+  <div class="panelfoot">
+    <label class="namerow"><span>save as</span>
+      <input type="text" id="fname" value="system" spellcheck="false"
+             autocomplete="off"><span class="ext">.json</span></label>
+    <button type="button" id="dl">Download system.json</button>
+    <pre id="cmd"></pre>
+  </div>
+</aside>
+</div>
+
+
+<section class="viewer">
+  <p class="kicker">Check it</p>
+  <h2>Look at what was built</h2>
+  <p class="hint" style="max-width:64ch">Drop any structure the build produced onto the panel
+  below: <code>loaded.gro</code>, <code>ions.gro</code>, <code>npt.gro</code> or a
+  <code>.pdb</code> written from the trajectory. GROMACS <code>.gro</code>, PDB and XYZ are
+  read, and the format is worked out from the file rather than its name. Hydrogens are left
+  out, which is what makes a structure this size turn under the mouse. The file never leaves
+  this computer.</p>
+
+  <div class="vwrap">
+    <canvas id="cv"></canvas>
+    <div class="drop" id="drop">
+      <b>Drop a structure here</b>
+      <span>.gro, .pdb or .xyz &nbsp;&middot;&nbsp;
+        <label style="text-decoration:underline;cursor:pointer;pointer-events:auto">
+        choose a file<input type="file" id="file" accept=".gro,.pdb,.ent,.xyz" hidden></label></span>
+    </div>
+  </div>
+
+  <div class="vbar">
+    <button type="button" id="reset">Reset view</button>
+    <label><input type="checkbox" id="showCorona" checked> corona</label>
+    <label><input type="checkbox" id="showWater"> water and ions</label>
+    <label><input type="checkbox" id="slab"> equatorial slice</label>
+  </div>
+  <div class="vlegend">
+    <span><i style="background:#2c3e50"></i>PPO, the core</span>
+    <span><i style="background:#95a5a6"></i>PEO, the corona</span>
+    <span><i style="background:#2980b9"></i>water and ions</span>
+    <span><i style="background:#c0392b"></i>the solute</span>
+  </div>
+  <p class="vstat" id="vstat">Drag to turn, wheel to zoom, shift-drag to pan, double-click to reset.</p>
+</section>
+
+<footer>
+  MIT licence. Pukyong National University, NCHM Lab.<br>
+  Eunryul Jeon, Dohyun Kim, Minseok Kwak.
+</footer>
+</div>
+
+<script>
+"use strict";
+// Every constant below is the one f127load/wizard.py uses. If one changes there
+// it has to change here, otherwise the page and the tool disagree.
+const NA = 6.02214076e23, MW_F127 = 12586.0, RHO = 1.0;
+const DEFAULT_BOX = 18.0;
+const REF_CHAINS = 34, REF_R_CORE = 3.99, REF_R_MIC = 7.0;
+const ATOMS_PER_CHAIN = 2053, ATOMS_PER_NM3_WATER = 100.1, EXCLUDED_PER_REF = 731.0;
+const HOST_MAX_R = 11.52;            // measured on data/f127_micelle_34.gro
+// the micelle must not see its own image through the 1.2 nm cut-off
+const MIN_CLEARANCE = 1.5;
+// keep in step with plan_size.BOX_WARN_NM. It sat at 18.0, which is now the
+// default box, so an ordinary design warned about itself.
+// keep in step with f127load/capacity.py and f127load/wizard.py. PACKING was
+// 1.4, which assumes the molecules settle at 71 per cent of the volume, above
+// random close packing at 64. The builder drops them at random, so 1/0.64 is
+// what it can actually reach, and USABLE is the share of the hollow a random
+// placement gets to before it runs out of room.
+const BOX_WARN = 22.0, CAVITY_LIMIT = 0.75, PACKING = 1.56, WATER_PAD = 3.0;
+const USABLE = 0.86;
+// the shell template's hollow is 4.6 nm across, so a solute centre stays inside 1.5 nm
+const SHELL_COM_LIMIT = 1.5;
+
+// vdW volume in nm3 and molar mass, computed once by f127load/capacity.py
+const LIB = {
+  pyrene:      {resn:"PYR", v:0.1867, mw:202.26, note:"the polarity probe the paper uses"},
+  aspirin:     {resn:"ASP", v:0.1555, mw:180.16, note:"small and weakly hydrophobic, a lower bound"},
+  curcumin:    {resn:"CUR", v:0.3336, mw:368.38, note:"comparable with published micelle work"},
+  doxorubicin: {resn:"DOX", v:0.4609, mw:543.52, note:"neutral form"},
+  doxorubicin_plus: {resn:"DXP", v:0.4623, mw:544.53, charge:1, note:"the +1 form carried at physiological pH"},
+  paclitaxel:  {resn:"TAX", v:0.7498, mw:853.92, note:"charge penalty 59, treat quantitative use with care"}
+};
+
+const $ = s => document.querySelector(s);
+
+// Ions. One salt was all the page offered, so the mixture the paper actually ran
+// could not be described here even though the wizard could build it. Counts are
+// worked out the same way the wizard does, from the concentration and the box,
+// so the page and the tool agree on the number of ions.
+const SALTS = [["NaCl","SOD","CLA",1],["KCl","POT","CLA",1],
+               ["CaCl2","CAL","CLA",2],["MgCl2","MG","CLA",2]];
+const PHYSIOLOGICAL = {NaCl:0.147, KCl:0.0041, CaCl2:0.0012, MgCl2:0.0009};
+function readSalts(){
+  const out={};
+  for(const [name] of SALTS){ const v=+($("#"+name).value)||0; if(v>0) out[name]=v; }
+  return out;
+}
+function ionCounts(salts, box){
+  const litres = box**3*1e-24, out={};
+  for(const [name,cat,an,z] of SALTS){
+    const c=salts[name]||0; if(c<=0) continue;
+    const n=Math.max(1, Math.round(c*litres*NA));
+    out[name]={cation:cat, anion:an, n_cation:n, n_anion:n*z, cation_charge:z};
+  }
+  return out;
+}
+const wtFromBox = (n, b) => 100*(n*MW_F127/NA)/(b**3*1e-21*RHO);
+const cavityR = (n, v) => Math.cbrt(3*n*v*PACKING/(4*Math.PI));
+
+const sel = $("#guest");
+for (const [k, m] of Object.entries(LIB)) {
+  const o = document.createElement("option");
+  o.value = k; o.textContent = k + "  (" + m.resn + ")";
+  sel.appendChild(o);
+}
+
+let state = {};
+// Which of the two split fields the reader has set for themselves. Before that
+// they track the amount in step 4.
+// Only the hollow count is independent. "in the water" is the amount in step 4
+// written a second time, so it always mirrors it and there is nothing to
+// remember about it.
+const touched = {nIn: false};
+
+function compute() {
+  const n = Math.max(5, Math.min(200, +$("#n").value || 34));
+  const g = LIB[sel.value] || LIB.pyrene;
+  const scale = Math.cbrt(n/REF_CHAINS);
+  const rCore = REF_R_CORE*scale, rMic = rCore + (REF_R_MIC - REF_R_CORE);
+  const minBox = (n === REF_CHAINS) ? 2*HOST_MAX_R + 1.0 : 2*rMic + 1.0;
+
+  // The box is the only size that is set. With the chain count fixed the weight
+  // fraction is the same number seen another way, so it follows rather than
+  // driving, and the two fields can no longer disagree.
+  let box = +$("#box").value || DEFAULT_BOX;
+  let forced = false, tight = false;
+  // The box used to be pushed back up whenever it went under the clearance, so
+  // asking for a smaller one did nothing. Anyone who wants a cheaper box and
+  // knows the micelle will see its own image should be able to have it, so the
+  // condition is reported and the number is left alone.
+  const clearBox = 2 * (rMic + MIN_CLEARANCE);
+  if (box < clearBox) tight = true;
+  if (box < minBox) forced = true;
+  const wt = wtFromBox(n, box);
+  $("#wt").value = wt.toFixed(2);
+  const clearance = box / 2 - rMic;
+
+  const atoms = Math.round(ATOMS_PER_CHAIN*n +
+      ATOMS_PER_NM3_WATER*Math.max(box**3 - EXCLUDED_PER_REF*n/REF_CHAINS, 0));
+  const vBoxL = box**3*1e-24, vCore = 4/3*Math.PI*rCore**3;
+
+  // A count is a whole number; a concentration is not. The field carried one
+  // step and one floor for all three, so the arrows moved a concentration in
+  // steps of one and the 0.0001 floor stayed behind as a tail: 26.0001.
+  const mode = $("#mode").value, amt = +$("#amt").value || 0;
+  let nG;
+  if (mode === "count") nG = Math.max(1, Math.round(amt));
+  else if (mode === "mM") nG = Math.max(1, Math.round(amt*1e-3*vBoxL*NA));
+  else nG = Math.max(1, Math.round(amt/100*n*MW_F127/g.mw));
+
+  const mM = nG/NA/vBoxL*1e3;
+  const wtG = 100*nG*g.mw/(n*MW_F127);
+  const fill = 100*nG*g.v/vCore;
+
+  let route = document.querySelector('input[name=route]:checked').value;
+  const limit = SHELL_COM_LIMIT * USABLE;
+  let nMax = 0; while (cavityR(nMax + 1, g.v) <= limit) nMax++;
+
+  // "Both" builds two systems, not one split in half, and the hollow holds far
+  // fewer than the water around it. They are counted separately, in molecules,
+  // because the hollow's limit is a count and the amount above is turned into
+  // one anyway.
+  $("#split").hidden = route !== "both";
+  let nOut = nG, nIn = Math.min(nG, nMax || 1);
+  if (route === "both") {
+    $("#nIn").max = String(Math.max(nMax, 1));
+    // Until one of these is typed into, it follows the amount above. Raising
+    // the amount then raises the outside system and the inside one with it,
+    // and the inside one stops at what the hollow holds while the outside
+    // keeps going. A field that has been typed into keeps its value.
+    $("#nOut").value = String(nG);
+    if (!touched.nIn) $("#nIn").value = String(Math.min(nG, Math.max(nMax, 1)));
+    nOut = Math.max(1, Math.round(+$("#nOut").value || nG));
+    nIn = Math.max(1, Math.min(Math.round(+$("#nIn").value || nIn), Math.max(nMax, 1)));
+    // the clamp has to reach the field as well, or it shows a number the
+    // hollow cannot take
+    if (String(nIn) !== $("#nIn").value) $("#nIn").value = String(nIn);
+    $("#outNote").textContent =
+      `molecules in that box  ·  ${(nOut/NA/vBoxL*1e3).toFixed(2)} mM, ${(100*nOut*g.mw/(n*MW_F127)).toFixed(2)} wt%`;
+    $("#inNote").textContent = nMax
+      ? `molecules in that box  ·  the hollow holds ${nMax}`
+      : `the hollow is too small for this molecule`;
+  } else if (route === "shell") {
+    nIn = nG;
+  }
+  const rCav = cavityR(route === "solution" ? nG : nIn, g.v);
+
+  state = {n, wt, box, rCore, rMic, minBox, forced, tight, clearance, atoms, nG, mM, wtG, fill,
+           route, rCav, limit, nMax, nOut, nIn, g, guest: sel.value,
+           salts: readSalts()};
+  render();
+}
+
+function row(k, v, warn) {
+  return `<div class="kv${warn ? " warnv" : ""}"><span>${k}</span><b>${v}</b></div>`;
+}
+
+function render() {
+  const s = state;
+  $("#out").innerHTML =
+    (function(){
+       const c=ionCounts(s.salts, s.box);
+       const names=Object.keys(c);
+       if(!names.length) return row("ions", "neutralising only");
+       const total=names.reduce((a,k)=>a+c[k].n_cation+c[k].n_anion,0);
+       const ionic=names.reduce((a,k)=>a+s.salts[k]*(c[k].cation_charge===1?1:3),0);
+       return names.map(k=>row(k, c[k].n_cation+" "+c[k].cation+" + "
+                                 +c[k].n_anion+" "+c[k].anion)).join("")
+            + row("ions in total", total.toLocaleString())
+            + row("ionic strength", ionic.toFixed(3) + " M");
+     })() +
+    row("core radius", s.rCore.toFixed(2) + " nm") +
+    row("micelle radius", s.rMic.toFixed(2) + " nm") +
+    row("box", s.box.toFixed(1) + " nm", s.box > BOX_WARN) +
+    row("clearance", s.clearance.toFixed(2) + " nm", s.clearance < MIN_CLEARANCE) +
+    row("polymer", s.wt.toFixed(1) + " wt%") +
+    row("atoms", s.atoms.toLocaleString()) +
+    row("solute", s.nG + " molecules") +
+    row("concentration", s.mM.toFixed(2) + " mM") +
+    row("wt% of polymer", s.wtG.toFixed(1) + " wt%") +
+    row("core filled", s.fill.toFixed(1) + " %", s.fill > 8);
+
+  // Two kinds of message, and they were not being told apart. A note that
+  // fires on every ordinary design is not a warning, and a fact taken from the
+  // CHARMM-GUI output is not a fault of this design. Only what the reader can
+  // act on stays in view; the rest goes under a line they can open.
+  const m = [];
+  if (s.tight)
+    m.push(["warn", `Only ${s.clearance.toFixed(2)} nm between the micelle and the face.
+      Under ${MIN_CLEARANCE} nm it sees its own image through the 1.2 nm cut-off, which
+      changes the result rather than only the picture. ${(2*(s.rMic+MIN_CLEARANCE)).toFixed(1)} nm
+      is the smallest that avoids it.`]);
+  if (s.fill > 20)
+    m.push(["warn", `This fills ${s.fill.toFixed(0)} per cent of the core. Random close packing is 64 per
+      cent, so it is possible, but it is far above what is loaded experimentally.`]);
+  if (s.route !== "solution") {
+    const nInside = s.route === "both" ? s.nIn : s.nG;
+    if (!s.nMax)
+      m.push(["warn", `${s.guest} is too large for the hollow, so it cannot start inside.
+        Use the solution route.`]);
+    else if (nInside > s.nMax)
+      m.push(["warn", `${nInside} will not fit inside. The hollow holds ${s.nMax}.`]);
+    else
+      m.push(["ok", `${nInside} fits inside. Cavity ${s.rCav.toFixed(2)} nm against a limit of
+        ${s.limit.toFixed(2)} nm, and the hollow holds ${s.nMax}.`]);
+  }
+
+  // worth knowing, not worth interrupting for
+  const q = [];
+  if (s.forced)
+    q.push(`The shipped structure sits in ${s.minBox.toFixed(1)} nm, so at ${s.box.toFixed(1)} nm its
+      outermost chain tips fold through the boundary and relax during equilibration.`);
+  if (s.box > BOX_WARN)
+    q.push(`Past ${BOX_WARN} nm the box is mostly water.`);
+  if (s.fill > 8 && s.fill <= 20)
+    q.push(`The core is ${s.fill.toFixed(0)} per cent filled, against 7.4 for the 100-pyrene system
+      in the paper.`);
+  if (s.guest === "doxorubicin")
+    q.push(`This is the neutral form. doxorubicin_plus is the +1 state carried at physiological pH.`);
+  if (s.guest === "doxorubicin_plus")
+    q.push(`Each molecule carries +1. The build adds one chloride each to neutralise, after the
+      salt is placed, so the concentration you asked for is unchanged.`);
+  if (s.guest === "paclitaxel")
+    q.push(`The charge penalty of 59 comes from CHARMM-GUI and is a comment on the parameters,
+      not on this design.`);
+
+  $("#msgs").innerHTML =
+    m.map(([k, t]) => `<p class="msg ${k}">${t}</p>`).join("") +
+    (q.length
+      ? `<details class="notes"><summary>${q.length} note${q.length > 1 ? "s" : ""} on this design</summary>`
+        + q.map(t => `<p>${t}</p>`).join("") + `</details>`
+      : "");
+
+  if (window.buildPreview) window.buildPreview(s);
+  renderCmd();
+}
+
+function cfg() {
+  const s = state;
+  return {
+    n_chains: s.n, wt_percent: +s.wt.toFixed(2), box_nm: +s.box.toFixed(2),
+    clearance_nm: +s.clearance.toFixed(2),
+    salts: s.salts, ion_counts: ionCounts(s.salts, s.box),
+    guest: s.guest,
+    // n_guest is the solution system. "inside" is the shell one, which the
+    // hollow limits to far fewer, and the build reads it only for that route.
+    n_guest: s.route === "both" ? s.nOut : s.nG,
+    inside: s.route === "solution" ? undefined : (s.route === "both" ? s.nIn : s.nG),
+    guest_mM: +s.mM.toFixed(2), guest_wt_percent: +s.wtG.toFixed(2),
+    core_fill_percent: +s.fill.toFixed(1), route: s.route
+  };
+}
+
+$("#phys").addEventListener("click", () => {
+  for(const [name] of SALTS) $("#"+name).value = PHYSIOLOGICAL[name] || 0;
+  compute();
+});
+$("#nosalt").addEventListener("click", () => {
+  for(const [name] of SALTS) $("#"+name).value = 0;
+  compute();
+});
+document.querySelectorAll("input.salt").forEach(el =>
+  el.addEventListener("input", compute));
+
+// A file name is not a path. Anything that could walk out of the downloads
+// folder or confuse a shell is taken out, and an empty box falls back to the
+// name the rest of the page talks about.
+// the command has to name the file that was actually saved
+function renderCmd(){
+  const s = state;
+  if (!s) return;
+  // The file lands in the browser's download folder and ./f127 lives in the
+  // clone, so the bare command only works if you happen to be standing in one
+  // with the file in the other. Naming the usual download path saves the guess.
+  $("#cmd").textContent = `cd /path/to/f127-load\n` +
+    `./f127 run ~/Downloads/${fileStem()}.json` +
+    (s.route === "both" ? "   # builds two systems" : "");
+}
+
+function fileStem(){
+  const raw = ($("#fname").value || "").trim()
+    .replace(/\.json$/i, "").replace(/[\\/:*?"<>|\s]+/g, "_")
+    .replace(/^\.+/, "").slice(0, 64);
+  return raw || "system";
+}
+$("#fname").addEventListener("input", () => {
+  $("#dl").textContent = `Download ${fileStem()}.json`;
+  renderCmd();
+});
+
+$("#dl").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(cfg(), null, 2) + "\n"],
+                        {type: "application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = fileStem() + ".json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+
+
+// The field means a different quantity in each mode, so it carries the step and
+// the floor that quantity wants, and a value already in it is rounded to the
+// places that mode shows.
+const AMT = {count: {step: "1",    min: "1",    dp: 0},
+             mM:    {step: "0.01", min: "0.01", dp: 2},
+             wt:    {step: "0.01", min: "0.01", dp: 2}};
+function amtMode(){
+  const a = AMT[$("#mode").value] || AMT.count, el = $("#amt");
+  el.step = a.step; el.min = a.min;
+  const v = +el.value;
+  if (isFinite(v) && v > 0) el.value = Math.max(+a.min, v).toFixed(a.dp);
+}
+$("#mode").addEventListener("change", () => { amtMode(); compute(); });
+$("#amt").addEventListener("change", amtMode);
+amtMode();
+
+// "in the water" and the amount in step 4 are the same quantity written twice,
+// and the settings file carries it once. Editing either moves the other, in
+// whatever unit step 4 is set to. "in the hollow" is a separate count with its
+// own ceiling and is left to itself.
+$("#nOut").addEventListener("input", () => {
+  const nOut = Math.max(1, Math.round(+$("#nOut").value || 0));
+  if (!nOut) return;
+  const s = state;
+  if (!s) return;
+  const mode = $("#mode").value;
+  const vBoxL = s.box ** 3 * 1e-24;
+  const dp = AMT[mode] ? AMT[mode].dp : 0;
+  const v = mode === "count" ? nOut
+          : mode === "mM"    ? nOut / NA / vBoxL * 1e3
+          :                    100 * nOut * s.g.mw / (s.n * MW_F127);
+  $("#amt").value = v.toFixed(dp);
+  compute();
+});
+// The hollow count is the reader's own once they set it, so it stops following
+// the amount. It still pushes the amount up when it passes it: the two systems
+// match by default, and fewer in the water than in the hollow is a pair nobody
+// wants. It never pulls the amount down, so asking for 60 in the water and 3 in
+// the hollow still works.
+$("#nIn").addEventListener("input", () => {
+  touched.nIn = true;
+  const s = state;
+  if (!s) return;
+  const nIn = Math.round(+$("#nIn").value || 0);
+  if (!(nIn > s.nOut)) return;
+  const mode = $("#mode").value;
+  const vBoxL = s.box ** 3 * 1e-24;
+  const dp = AMT[mode] ? AMT[mode].dp : 0;
+  const v = mode === "count" ? nIn
+          : mode === "mM"    ? nIn / NA / vBoxL * 1e3
+          :                    100 * nIn * s.g.mw / (s.n * MW_F127);
+  $("#amt").value = v.toFixed(dp);
+  // the form's own listener runs on the way up from this element, but relying
+  // on that order is fragile, so the recalculation is asked for here
+  compute();
+});
+// choosing a route again offers a fresh start, so the fields follow once more
+document.querySelectorAll('input[name=route]').forEach(r =>
+  r.addEventListener("change", () => { touched.nIn = false; }));
+$("#f").addEventListener("input", compute);
+// the split fields live in the same form, so the form listener covers them
+$("#f").addEventListener("change", compute);
+
+// -------------------------------------------------------------- preview ----
+// A sketch drawn from the numbers on the left, at the radii they imply. No atom
+// here came from a force field: it exists so a choice of chains, concentration
+// and route can be seen rather than read. The panel further down draws the real
+// structure once a build exists.
+(function(){
+  const cv=document.getElementById("pcv");
+  if(!cv) return;
+  const ctx=cv.getContext("2d"), cap=document.getElementById("pvcap");
+  // "both" draws two systems in one sketch, so the one that starts in the
+  // hollow is shaded apart from the one that starts in the water. Drawn in
+  // the same red they read as one crowd of molecules, which is the opposite
+  // of what the pair is meant to show.
+  const C={core:"#2c3e50",corona:"#95a5a6",sol:"#c0392b",solin:"#e67e22"};
+  let pts=[], boxPts=null, half=8;
+  const home={yaw:0.6,pitch:-0.3,zoom:1};
+  let v=Object.assign({},home);
+
+  function mulberry(a){ return function(){ a|=0; a=a+0x6D2B79F5|0;
+    let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t;
+    return ((t^t>>>14)>>>0)/4294967296; }; }
+  function inShell(rng,r0,r1){
+    const u=rng(), c=2*rng()-1, ph=6.2832*rng();
+    const r=Math.cbrt(r0**3+u*(r1**3-r0**3)), s=Math.sqrt(1-c*c);
+    return [r*s*Math.cos(ph), r*s*Math.sin(ph), r*c];
+  }
+
+  window.buildPreview=function(s){
+    const rng=mulberry(12345), P=[];
+    const k=Math.pow(s.n/34, 2/3);
+    for(let i=0;i<Math.round(900*k);i++){ const q=inShell(rng,0,s.rCore); P.push([q[0],q[1],q[2],0]); }
+    for(let i=0;i<Math.round(1500*k);i++){ const q=inShell(rng,s.rCore,s.rMic); P.push([q[0],q[1],q[2],1]); }
+    // Each route carries its own count, and the hollow's is the smaller one.
+    // Both were drawn from s.nG, so changing the molecule capped the number in
+    // the field but left the sketch showing the old crowd in the hollow.
+    const put=(inside,howMany)=>{ let n=0,g=0;
+      const want=Math.min(howMany,260);
+      while(n<want && g++<20000){
+        let q;
+        if(inside) q=inShell(rng,0,SHELL_COM_LIMIT);
+        else{ q=[(rng()-0.5)*s.box,(rng()-0.5)*s.box,(rng()-0.5)*s.box];
+              if(Math.hypot(q[0],q[1],q[2])<s.rMic+0.4) continue; }
+        P.push([q[0],q[1],q[2],inside&&s.route==="both"?3:2]); n++; } };
+    if(s.route==="shell") put(true, s.nIn);
+    else if(s.route==="both"){ put(true, s.nIn); put(false, s.nOut); }
+    else put(false, s.nG);
+    pts=P; half=s.box/2;
+    // the simulation box, so the amount of water around the micelle is visible
+    const b=s.box/2;
+    boxPts=[[-b,-b,-b],[b,-b,-b],[b,b,-b],[-b,b,-b],
+            [-b,-b, b],[b,-b, b],[b,b, b],[-b,b, b]];
+    const where = s.route==="shell" ? "closed inside the shell"
+      : s.route==="both" ? "in both places, drawn together although they are two systems"
+      : "dispersed in the water";
+    cap.innerHTML="<b>A sketch, not a simulation.</b> The radii, the box and the counts "
+      +"are the ones below, and the solute is "+where+". The dashed cube is the "
+      +"simulation box, so the water around the micelle is the gap you see. "
+      +"Drag to turn, double-click to reset.";
+    drawP();
+  };
+
+  function drawP(){
+    const dpr=window.devicePixelRatio||1, w=cv.clientWidth||340, h=cv.clientHeight||250;
+    if(cv.width!==w*dpr){ cv.width=w*dpr; cv.height=h*dpr; }
+    ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
+    if(!pts.length) return;
+    const sy=Math.sin(v.yaw),cy=Math.cos(v.yaw),sp=Math.sin(v.pitch),cp=Math.cos(v.pitch);
+    const sc=Math.min(w,h)/(2.6*half)*v.zoom, out=[];
+    for(const q of pts){
+      const x1=q[0]*cy+q[2]*sy, z1=-q[0]*sy+q[2]*cy;
+      const y1=q[1]*cp-z1*sp, z2=q[1]*sp+z1*cp;
+      out.push([z2, x1*sc+w/2, -y1*sc+h/2, q[3]]);
+    }
+    // the box first, so the atoms sit on top of it
+    if(boxPts){
+      const pr=q=>{ const x1=q[0]*cy+q[2]*sy, z1=-q[0]*sy+q[2]*cy;
+        return [x1*sc+w/2, -(q[1]*cp-z1*sp)*sc+h/2]; };
+      const v2=boxPts.map(pr);
+      const E=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+      ctx.strokeStyle="#c3c9cc"; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+      ctx.beginPath();
+      for(const [a,bq] of E){ ctx.moveTo(v2[a][0],v2[a][1]); ctx.lineTo(v2[bq][0],v2[bq][1]); }
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+    out.sort((a,b)=>a[0]-b[0]);
+    const nm=["core","corona","sol","solin"];
+    for(const o of out){
+      ctx.fillStyle=C[nm[o[3]]];
+      ctx.globalAlpha=o[3]===1?0.28:(o[3]===0?0.85:1);
+      ctx.beginPath();
+      ctx.arc(o[1],o[2], o[3]>=2?Math.max(2,sc*0.16):Math.max(0.8,sc*0.045),0,6.2832);
+      ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }
+
+  let d=null;
+  cv.addEventListener("pointerdown",e=>{d={x:e.clientX,y:e.clientY};
+    cv.classList.add("drag"); cv.setPointerCapture&&cv.setPointerCapture(e.pointerId);});
+  cv.addEventListener("pointermove",e=>{ if(!d)return;
+    v.yaw+=(e.clientX-d.x)*0.009; v.pitch+=(e.clientY-d.y)*0.009;
+    v.pitch=Math.max(-1.55,Math.min(1.55,v.pitch));
+    d={x:e.clientX,y:e.clientY}; drawP();});
+  cv.addEventListener("pointerup",()=>{d=null;cv.classList.remove("drag");});
+  cv.addEventListener("wheel",e=>{e.preventDefault();
+    v.zoom=Math.max(0.4,Math.min(6,v.zoom*Math.exp(-e.deltaY*0.0016))); drawP();},{passive:false});
+  cv.addEventListener("dblclick",()=>{v=Object.assign({},home);drawP();});
+  window.addEventListener("resize",drawP);
+})();
+
+compute();
+
+// ---------------------------------------------------------------- 3D viewer --
+// Painter's algorithm on a 2D canvas. No library: the page has to work from a
+// file:// URL with no network. Hydrogens are dropped, which removes more than
+// half the atoms and is what makes 70,000-atom structures interactive at all.
+(function(){
+  const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+  const drop = document.getElementById("drop"), stat = document.getElementById("vstat");
+  const COL = {ppo:"#2c3e50", peo:"#95a5a6", wat:"#2980b9", sol:"#c0392b"};
+  const PPO = new Set(["PROXS","PROXR","PROX"]), PEO = new Set(["ETHOX","ETHO"]);
+  const WAT = new Set(["TIP3","SOL","SOD","CLA","POT"]);
+  let atoms = null, box = null, view = {yaw:0.5, pitch:-0.35, zoom:1, ox:0, oy:0};
+  const home = Object.assign({}, view);
+
+  // Which kind of atom, from its residue name. Anything that is not the polymer,
+  // water or an ion is the solute, whatever it is called, so a guest the page has
+  // never heard of still shows up in red.
+  function classify(resn){
+    if (PPO.has(resn)) return 0;
+    if (PEO.has(resn)) return 1;
+    if (WAT.has(resn)) return 2;
+    return 3;
+  }
+
+  // A .gro is fixed width and in nanometres; a .pdb is fixed width and in
+  // angstrom; an .xyz is whitespace separated with no residues at all. Taking
+  // every file as a .gro read the coordinate columns of a .pdb as residue names
+  // and drew nothing, so the format is worked out from the file itself rather
+  // than from the name it was saved under.
+  function looksLikePDB(L){
+    return L.some(l => /^(ATOM  |HETATM)/.test(l));
+  }
+
+  function parseGRO(L){
+    const n = parseInt(L[1]);
+    const rows = [];
+    for (let i=0;i<n;i++){
+      const l = L[2+i]; if (!l) break;
+      rows.push({resn: l.slice(5,10).trim(), name: l.slice(10,15).trim(),
+                 x:+l.slice(20,28), y:+l.slice(28,36), z:+l.slice(36,44)});
+    }
+    const bl = L[2+n] ? L[2+n].trim().split(/\s+/).map(Number) : [0,0,0];
+    return {rows, bl};
+  }
+
+  function parsePDB(L){
+    const rows = [];
+    let bl = [0,0,0];
+    for (const l of L){
+      if (/^CRYST1/.test(l)){
+        // angstrom on the CRYST1 record, nanometres everywhere in this page
+        bl = [+l.slice(6,15)/10, +l.slice(15,24)/10, +l.slice(24,33)/10];
+        continue;
+      }
+      if (!/^(ATOM  |HETATM)/.test(l)) continue;
+      rows.push({resn: l.slice(17,20).trim(), name: l.slice(12,16).trim(),
+                 x:+l.slice(30,38)/10, y:+l.slice(38,46)/10, z:+l.slice(46,54)/10,
+                 el: l.slice(76,78).trim()});
+    }
+    return {rows, bl};
+  }
+
+  function parseXYZ(L){
+    const n = parseInt(L[0]);
+    const rows = [];
+    for (let i=0;i<n;i++){
+      const p = (L[2+i]||"").trim().split(/\s+/);
+      if (p.length < 4) break;
+      rows.push({resn:"", name:p[0], x:+p[1]/10, y:+p[2]/10, z:+p[3]/10, el:p[0]});
+    }
+    return {rows, bl:[0,0,0]};
+  }
+
+  function parse(text){
+    const L = text.split("\n");
+    let out;
+    if (looksLikePDB(L)) out = parsePDB(L);
+    else if (/^\s*\d+\s*$/.test(L[0] || "")) out = parseXYZ(L);
+    else out = parseGRO(L);
+    const {rows, bl} = out;
+    if (!rows.length) throw new Error("no atoms found in that file");
+    const xs=[], ys=[], zs=[], kind=[], rad=[];
+    for (const r of rows){
+      // element from the atom name: CHARMM names start with the element letter
+      const e = (r.el || r.name.replace(/^[0-9]+/,"")).charAt(0).toUpperCase();
+      if (e === "H") continue;                       // heavy atoms only
+      const k = classify(r.resn);
+      xs.push(r.x); ys.push(r.y); zs.push(r.z);
+      kind.push(k); rad.push(k===3 ? 1.5 : (e==="O" ? 1.0 : 1.1));
+    }
+    // centre on the polymer, which is what the eye expects at the middle
+    let cx=0, cy=0, cz=0, m=0;
+    for (let i=0;i<xs.length;i++) if (kind[i]<2){ cx+=xs[i]; cy+=ys[i]; cz+=zs[i]; m++; }
+    if (!m){ m = xs.length; for (let i=0;i<xs.length;i++){ cx+=xs[i]; cy+=ys[i]; cz+=zs[i]; } }
+    cx/=m; cy/=m; cz/=m;
+    for (let i=0;i<xs.length;i++){ xs[i]-=cx; ys[i]-=cy; zs[i]-=cz; }
+    let r = 0; for (let i=0;i<xs.length;i++) if (kind[i]<2)
+      r = Math.max(r, Math.hypot(xs[i],ys[i],zs[i]));
+    const cnt = [0,0,0,0]; kind.forEach(k=>cnt[k]++);
+    return {xs,ys,zs,kind,rad,extent:r||10,box:bl,count:cnt,order:null};
+  }
+
+  function draw(fast){
+    const dpr = window.devicePixelRatio || 1;
+    const w = cv.clientWidth, h = cv.clientHeight;
+    if (cv.width !== w*dpr){ cv.width = w*dpr; cv.height = h*dpr; }
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,w,h);
+    if (!atoms) return;
+    const showC = document.getElementById("showCorona").checked;
+    const showW = document.getElementById("showWater").checked;
+    const slab  = document.getElementById("slab").checked;
+    const sy=Math.sin(view.yaw), cy=Math.cos(view.yaw);
+    const sp=Math.sin(view.pitch), cp=Math.cos(view.pitch);
+    const scale = Math.min(w,h)/(2.35*atoms.extent)*view.zoom;
+    const step = fast ? 3 : 1;
+    const A = atoms, N = A.xs.length, pts = [];
+    for (let i=0;i<N;i+=step){
+      const k = A.kind[i];
+      if (k===1 && !showC) continue;
+      if (k===2 && !showW) continue;
+      const x=A.xs[i], y=A.ys[i], z=A.zs[i];
+      const x1 =  x*cy + z*sy, z1 = -x*sy + z*cy;
+      const y1 =  y*cp - z1*sp, z2 = y*sp + z1*cp;
+      if (slab && Math.abs(z2) > 1.0) continue;
+      pts.push(z2, x1*scale + w/2 + view.ox, -y1*scale + h/2 + view.oy,
+               A.rad[i]*scale*0.42, k);
+    }
+    const M = pts.length/5, idx = new Int32Array(M);
+    for (let i=0;i<M;i++) idx[i]=i;
+    const zz = new Float32Array(M);
+    for (let i=0;i<M;i++) zz[i]=pts[i*5];
+    idx.sort((a,b)=>zz[a]-zz[b]);                      // far to near
+    const names = ["ppo","peo","wat","sol"];
+    for (let j=0;j<M;j++){
+      const i = idx[j]*5, k = pts[i+4];
+      ctx.fillStyle = COL[names[k]];
+      ctx.globalAlpha = k===2 ? 0.30 : (k===1 ? 0.55 : 1);
+      ctx.beginPath();
+      ctx.arc(pts[i+1], pts[i+2], Math.max(0.6, pts[i+3]), 0, 6.2832);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function load(text, name){
+    atoms = parse(text); view = Object.assign({}, home); drop.style.display="none";
+    const c = atoms.count;
+    stat.textContent = `${name} · ${(c[0]+c[1]+c[2]+c[3]).toLocaleString()} heavy atoms `
+      + `(core ${c[0].toLocaleString()}, corona ${c[1].toLocaleString()}, `
+      + `water and ions ${c[2].toLocaleString()}, solute ${c[3].toLocaleString()}) · `
+      + `box ${atoms.box[0]?atoms.box[0].toFixed(1):"?"} nm`;
+    draw(false);
+  }
+
+  function readFile(f){
+    if (!f) return;
+    stat.textContent = "reading...";
+    const r = new FileReader();
+    r.onload = () => load(r.result, f.name);
+    r.readAsText(f);
+  }
+  document.getElementById("file").addEventListener("change", e=>readFile(e.target.files[0]));
+  ["dragenter","dragover"].forEach(t=>cv.addEventListener(t,e=>{e.preventDefault();
+    cv.style.background="#eef3f7";}));
+  ["dragleave","drop"].forEach(t=>cv.addEventListener(t,e=>{e.preventDefault();
+    cv.style.background="";}));
+  cv.addEventListener("drop", e=>readFile(e.dataTransfer.files[0]));
+
+  let drag=null;
+  cv.addEventListener("pointerdown", e=>{
+    drag={x:e.clientX, y:e.clientY, shift:e.shiftKey}; cv.classList.add("drag");
+    cv.setPointerCapture(e.pointerId);
+  });
+  cv.addEventListener("pointermove", e=>{
+    if (!drag || !atoms) return;
+    const dx=e.clientX-drag.x, dy=e.clientY-drag.y;
+    drag.x=e.clientX; drag.y=e.clientY;
+    if (drag.shift){ view.ox+=dx; view.oy+=dy; }
+    else { view.yaw+=dx*0.008; view.pitch+=dy*0.008;
+           view.pitch=Math.max(-1.55,Math.min(1.55,view.pitch)); }
+    draw(true);
+  });
+  cv.addEventListener("pointerup", e=>{ drag=null; cv.classList.remove("drag"); draw(false); });
+  cv.addEventListener("wheel", e=>{
+    if (!atoms) return; e.preventDefault();
+    view.zoom *= Math.exp(-e.deltaY*0.0016);
+    view.zoom = Math.max(0.25, Math.min(14, view.zoom));
+    draw(true); clearTimeout(cv._t); cv._t=setTimeout(()=>draw(false),140);
+  }, {passive:false});
+  cv.addEventListener("dblclick", ()=>{ view=Object.assign({},home); draw(false); });
+  document.getElementById("reset").addEventListener("click",
+    ()=>{ view=Object.assign({},home); draw(false); });
+  ["showCorona","showWater","slab"].forEach(id=>
+    document.getElementById(id).addEventListener("change", ()=>draw(false)));
+  window.addEventListener("resize", ()=>draw(false));
+})();
+
+</script>
+<p class="repo"><a href="https://github.com/erjeon/f127-load"><b>The code</b></a><span>Runs in the browser. Nothing is uploaded.</span><a href="https://github.com/erjeon/f127-load#install">Install</a><a href="https://github.com/erjeon/f127-load#requirements">What it needs</a><a href="index.html">What the micelle looks like</a></p>
+</body>
+</html>

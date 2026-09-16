@@ -9,3 +9,14 @@ __pycache__/
 *.cpt
 *.log
 \#*\#
+
+# a build's output, not an input. One of these is 78 MB.
+run_*/
+mdout.mdp
+# written by ./f127 check and ./f127 new, local to whoever ran them
+/compat.json
+/system.cfg
+/system.json
+*.tar.gz
+# local backups made while editing
+bak/

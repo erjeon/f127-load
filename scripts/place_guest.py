@@ -1,6 +1,10 @@
-"""화물 분자를 미셀 안(shell) 또는 벌크 물 영역(soak)에 무작위 배치한다.
-사용: place_guest.py host.gro guest.pdb N {shell|soak} out.gro [seed]
-겹침 검사를 통과할 때까지 위치·회전을 다시 뽑는다."""
+"""Place solute molecules inside the micelle (shell) or in bulk water (solution).
+usage: place_guest.py host.gro guest.pdb N {shell|soak} out.gro [seed] [box_nm]
+
+box_nm is the edge of the cubic box the system will end up in. Without it the
+placement radius comes from the host's own box, and a later editconf that
+shrinks the box folds the outermost molecules onto the micelle through the
+periodic boundary. Energy minimisation then diverges on the first step."""
 import sys, numpy as np
 
 def read_gro(fn):
@@ -18,7 +22,7 @@ def read_guest(fn):
             names.append((l[12:16].strip(), l[17:20].strip()))
         elif fn.endswith('.gro'):
             pass
-    if not xs:                                   # gro 입력 지원
+    if not xs:                                   # a gro was given instead of a pdb
         L=open(fn).read().splitlines(); n=int(L[1])
         for l in L[2:2+n]:
             xs.append((float(l[20:28])*10,float(l[28:36])*10,float(l[36:44])*10))
@@ -36,6 +40,9 @@ def main():
     seed = int(sys.argv[6]) if len(sys.argv)>6 else 2026
     rng = np.random.default_rng(seed)
     title, rec, box = read_gro(host_f)
+    host_box = box.copy()                      # the box the host was equilibrated in
+    if len(sys.argv) > 7:                      # the box the system will end up in
+        box = np.full(3, float(sys.argv[7]))
     hp = np.array([[r[4],r[5],r[6]] for r in rec])
     g0, gnames = read_guest(guest_f)
     g0 = g0 - g0.mean(0)
@@ -44,31 +51,116 @@ def main():
     com = hp.mean(0)
     d = np.linalg.norm(hp-com, axis=1)
     R95 = np.percentile(d, 95)
-    if mode == 'shell':
-        rmax = 1.5; lo, hi = 0.0, rmax
-        print(f"  shell 배치: COM 반경 {hi:.1f} nm 이내")
-    elif mode == 'soak':
-        lo, hi = R95 + 1.0, box.min()/2 - 0.8
-        if lo >= hi: sys.exit(f"  [FAIL] 벌크 영역이 없다 (미셀 R95={R95:.1f}, 박스 {box.min():.1f} nm). 박스를 키워라.")
-        print(f"  soak 배치: COM 반경 {lo:.1f}–{hi:.1f} nm")
-    else: sys.exit("mode 는 shell 또는 soak")
 
-    placed, occ = [], list(hp)
+    # Shrinking the box around an equilibrated structure folds the far corona
+    # back onto the micelle through the periodic boundary. Energy minimisation
+    # then diverges on the first step with an infinite force, which looks like a
+    # force field problem and is not one.
+    #
+    # A corona that reaches past half of its OWN box is not a fault: at
+    # equilibrium the chains interdigitate with their periodic images and the
+    # structure was equilibrated that way. So the test is against the box the
+    # host came in, not against the furthest atom.
+    if box.min() < host_box.min() - 0.05:
+        # This used to raise the box to the host's own size and say so. The next
+        # step then set it straight back to what was asked for, so the message
+        # described something that did not happen and the wrapping it warned
+        # about happened anyway. The requested box is kept, and the warning now
+        # says what the wrapping costs. The paper's own solution-route system
+        # was built this way, in 17.0 nm from a host equilibrated in 25.0 nm.
+        out_n = int((d > box.min() / 2).sum())
+        print(f"  [warn] the requested {box.min():.1f} nm box is smaller than the"
+              f" {host_box.min():.1f} nm the host was equilibrated in, so"
+              f" {out_n} atoms reach past half the box and wrap onto the far"
+              f" side.")
+        print(f"         The corona then interdigitates with its own periodic"
+              f" image, which is how a concentrated system is meant to look but"
+              f" is not what a dilute one should do. Check that the box after"
+              f" the pressure step is close to {box.min():.1f} nm. To start from"
+              f" a host that is already this dense, compress one with"
+              f" densify.py.")
+    if mode == 'shell':
+        # the template's hollow is 4.6 nm across, so a guest centre stays
+        # inside 1.5 nm and leaves room for the molecule itself
+        rmax = 1.5; lo, hi = 0.0, rmax
+        print(f"  shell: centres within {hi:.1f} nm of the middle")
+    elif mode == 'soak':
+        # Anywhere in the box that is far enough from the polymer. A radial shell
+        # between the corona and half the box sounds tidier but leaves nothing to
+        # aim at once the micelle fills much of the box, and the aqueous phase is
+        # not a shell anyway: it is the corners as well.
+        lo = hi = None
+        print(f"  solution: anywhere in the water (micelle R95 {R95:.1f} nm, box {box.min():.1f} nm)")
+    else: sys.exit("mode must be shell or soak")
+
+    # The clash test used to rebuild a 70,000 by 3 array on every trial, which is
+    # fine for eight small molecules and stalls for twenty large ones. The host
+    # never moves, so it is prepared once. Only host atoms that could possibly
+    # reach the placement region are kept, which for the shell route is a few
+    # thousand out of seventy thousand.
+    def _min_dist(ref, xyz, box):
+        dd = ref - xyz[:, None, :]
+        dd -= box * np.round(dd / box)
+        return np.linalg.norm(dd, axis=2).min()
+
+    try:
+        from scipy.spatial import cKDTree
+    except ImportError:
+        cKDTree = None
+    reach = np.linalg.norm(g0, axis=1).max() + 0.5
+    if lo is None:
+        host_near = hp                                   # soak: anywhere in the box
+    else:
+        dh = hp - com
+        dh -= box * np.round(dh / box)
+        host_near = hp[np.linalg.norm(dh, axis=1) <= hi + reach + 0.5]
+    # boxsize makes the tree periodic, so a molecule near a face still sees its
+    # image. It needs coordinates inside [0, L), which is where a gro keeps them.
+    tree = None
+    if cKDTree is not None:
+        try:
+            tree = cKDTree(np.mod(host_near, box), boxsize=box)
+        except Exception:
+            tree = None
+    placed, placed_pts = [], np.zeros((0, 3))
     tries = 0
     while len(placed) < N and tries < 200000:
         tries += 1
-        u = rng.normal(size=3); u /= np.linalg.norm(u)
-        r = (lo**3 + rng.random()*(hi**3-lo**3))**(1/3)
-        c = com + u*r
+        if lo is None:                      # soak, uniform over the box
+            c = com + (rng.random(3) - 0.5) * (box - 1.0)
+        else:                               # shell, uniform in a sphere
+            u = rng.normal(size=3); u /= np.linalg.norm(u)
+            c = com + u * (lo**3 + rng.random()*(hi**3-lo**3))**(1/3)
         xyz = g0 @ rand_rot(rng).T + c
-        ref = np.array(occ)
+        # A neighbour tree answers "is anything within 0.28 nm" without forming a
+        # 47 by 70000 by 3 array for every trial, which is what made a shell of
+        # twenty large molecules take longer than the simulation it was preparing.
+        if tree is not None:
+            if tree.query_ball_point(xyz, 0.28, return_length=True).any():
+                continue
+            if placed_pts.size and _min_dist(placed_pts, xyz, box) < 0.28:
+                continue
+            placed.append(xyz)
+            placed_pts = np.vstack((placed_pts, xyz))
+            continue
+        ref = host_near if placed_pts.size == 0 else np.vstack((host_near, placed_pts))
         dd = ref - xyz[:,None,:]
         dd -= box*np.round(dd/box)
-        if np.linalg.norm(dd,axis=2).min() < 0.28:   # 2.8 A 이내면 재시도
+        # 2.8 A against anything already there. For the solution route also keep
+        # clear of the polymer surface, so the solute starts in water and is not
+        # already touching the micelle it is supposed to find on its own.
+        near = np.linalg.norm(dd, axis=2).min()
+        if near < 0.28:
             continue
-        placed.append(xyz); occ.extend(list(xyz))
+        if lo is None:
+            dh = hp - xyz[:, None, :]
+            dh -= box * np.round(dh / box)
+            if np.linalg.norm(dh, axis=2).min() < 0.60:
+                continue
+        placed.append(xyz)
+        placed_pts = np.vstack((placed_pts, xyz))
     if len(placed) < N:
-        sys.exit(f"  [FAIL] {N}개 중 {len(placed)}개만 배치. 반경/개수를 줄여라.")
+        sys.exit(f"  [failed] placed only {len(placed)} of {N}. Use fewer, or a larger box.")
 
     lines, rid, aid = [], 0, 0
     for r in rec:
@@ -87,7 +179,7 @@ def main():
         f.write(f"{title} + {N} {resn}\n{len(lines)}\n")
         f.write("\n".join(lines)+"\n")
         f.write(f"{box[0]:10.5f}{box[1]:10.5f}{box[2]:10.5f}\n")
-    print(f"  → {out}  ({len(lines)} atoms, {N} x {resn}, {tries} tries)")
+    print(f"  -> {out}  ({len(lines)} atoms, {N} x {resn}, {tries} tries)")
     print(f"RESNAME={resn}")
 
 if __name__ == '__main__': main()

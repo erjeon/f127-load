@@ -1,0 +1,9 @@
+; POT, converted from CHARMM by make_ion_itp.py
+
+[ moleculetype ]
+; name  nrexcl
+POT       1
+
+[ atoms ]
+; nr  type  resnr  residu  atom  cgnr  charge      mass
+    1    POT      1     POT    POT     1    1.000    39.09830

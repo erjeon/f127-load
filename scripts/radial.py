@@ -1,13 +1,15 @@
-"""반경 밀도 · 담지율 · 화물 수화수.  radial.py TPR XTC RESN BEGIN_ps OUTDIR"""
-import sys, numpy as np, MDAnalysis as mda
+"""Radial density, uptake and solute hydration.  radial.py TPR XTC RESN BEGIN_ps OUTDIR"""
+import sys, os, numpy as np, MDAnalysis as mda
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _universe import open_universe
 tpr, xtc, resn, beg, out = sys.argv[1], sys.argv[2], sys.argv[3], float(sys.argv[4]), sys.argv[5]
-u = mda.Universe(tpr, xtc)
+u = open_universe(tpr, xtc)
 core   = u.select_atoms("resname PROXS PROXR PROX")
 corona = u.select_atoms("resname ETHOX ETHO")
 guest  = u.select_atoms(f"resname {resn}")
 water  = u.select_atoms("resname TIP3 SOL and name OH2 OW O")
 mic = core + corona
-assert len(core) and len(guest), "core/guest 선택이 비었다"
+assert len(core) and len(guest), "the core or solute selection is empty"
 edges = np.linspace(0, 7.0, 29); cent = .5*(edges[1:]+edges[:-1])
 V = (4/3)*np.pi*(edges[1:]**3-edges[:-1]**3)
 acc = {k: np.zeros(len(cent)) for k in ('core','corona','guest','water')}
@@ -36,11 +38,25 @@ np.savetxt(f"{out}/radial_density.dat",
 np.savetxt(f"{out}/encapsulation.dat", np.array(enc), header=f"time(ns) n_inside_R90 (total {len(guest.residues)})", fmt="%10.3f")
 np.savetxt(f"{out}/nwater.dat", np.array(nwat), header="time(ns) n_water_within_0.35nm", fmt="%10.3f")
 ins = dg[dg < R90]
-with open(f"{out}/localisation.txt","w") as f:
+# A solute that never reached the core leaves the guest histogram empty. Reading
+# a peak position off it returns the first bin, and the outer-half fraction
+# divides by nothing, so the report read as a broken calculation rather than as
+# a solute that simply stayed outside. Those two lines are only written when
+# there is something inside to describe.
+inside = ins.size
+with open(f"{out}/localisation.txt", "w") as f:
     f.write(f"frames                 {n}\nsamples                {dg.size}\n")
     f.write(f"R_core (90%ile PPO)    {R90:.3f} nm\n")
     f.write(f"<d>/R_core             {dg.mean()/R90:.3f}   (uniform sphere = 0.750)\n")
-    f.write(f"peak of number density {cent[np.argmax(acc['guest'])]:.3f} nm\n")
-    f.write(f"fraction inside R_core {100*(dg<R90).mean():.1f} %\n")
-    f.write(f"  of those, in outer half-volume {100*(ins>R90/2**(1/3)).mean():.1f} %  (uniform = 50 %)\n")
+    f.write(f"fraction inside R_core {100 * inside / dg.size:.1f} %\n")
+    if inside:
+        f.write(f"peak of number density {cent[np.argmax(acc['guest'])]:.3f} nm\n")
+        f.write(f"  of those, in outer half-volume "
+                f"{100*(ins>R90/2**(1/3)).mean():.1f} %  (uniform = 50 %)\n")
+    else:
+        f.write(f"the solute never came within R_core over these {n} frames. "
+                f"Its closest approach was {dg.min():.2f} nm against an "
+                f"R_core of {R90:.2f} nm.\n")
+        f.write("This is the expected reading for a short run of the solution "
+                "route; uptake in the paper took tens of nanoseconds.\n")
 print(open(f"{out}/localisation.txt").read())

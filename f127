@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# One entry point. Everything else is reachable from here.
+#
+#   ./f127 check            what is installed, what is missing, how to install it
+#   ./f127 new              answer a few questions, get system.cfg
+#   ./f127 build  cfg       build the system from system.cfg, stop at the tpr
+#   ./f127 run    cfg [ns]  build, equilibrate, then run
+#   ./f127 test   cfg       a short pass of all of it, to see that it works here
+#   ./f127 pack   dir       tar.gz of everything needed to rerun or to share
+#
+# Pukyong National University / NCHM Lab.  Eunryul Jeon <qlsguswjs@pukyong.ac.kr>
+set -uo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PY=${PYTHON:-python3}
+# The working directory is left alone on purpose. A run directory, and the
+# config `new` writes, land where you are standing rather than inside the
+# checkout, so a clone stays clean and results can live on a different disk.
+export PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}"
+
+usage() { sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
+[[ $# -ge 1 ]] || usage
+
+case "$1" in
+  check) shift; exec bash "$ROOT/0_check.sh" "$@" ;;
+  new)   shift; exec "$PY" -m f127load.wizard "$@" ;;
+  size)  shift; exec "$PY" -m f127load.plan_size "$@" ;;
+  build) shift; exec bash "$ROOT/scripts/1_build.sh" "$@" ;;
+  run)   shift; exec bash "$ROOT/scripts/1_build.sh" --run "$@" ;;
+  # Everything runs and nothing is equilibrated. It answers whether the
+  # tool works on this machine, not whether the answer is right.
+  test)  shift; exec env NPT_NS=0.02 bash "$ROOT/scripts/1_build.sh" --run "$1" 0.05 ;;
+  pack)  shift; exec bash "$ROOT/scripts/9_pack.sh" "$@" ;;
+  -h|--help|help) usage ;;
+  *) echo "unknown command: $1"; usage ;;
+esac

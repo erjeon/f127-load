@@ -57,9 +57,13 @@ NA = 6.02214076e23
 # radius cannot be wrapped by the shell during relaxation.
 CAVITY_LIMIT = 0.75
 
-# Packing efficiency of randomly placed rigid bodies.  Volumes are inflated by
-# this factor when the cavity radius is estimated.
-PACKING_FACTOR = 1.4
+# A cavity has to be larger than the molecules it holds. 1.4 assumes they end up
+# at 71 per cent of the volume, which is between random close packing at 64 and
+# the crystalline limit at 74, so it describes molecules that were stacked
+# rather than dropped. place_guest drops them at random and rejects overlaps,
+# and asked for 54 pyrene in the shell hollow it placed 32. 1.0/0.64 is what
+# random close packing actually allows.
+PACKING_FACTOR = 1.56
 
 
 def read_mol2(path: Path):

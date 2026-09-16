@@ -11,7 +11,8 @@
 #
 # Pukyong National University / NCHM Lab.  Eunryul Jeon <qlsguswjs@pukyong.ac.kr>
 set +u
-source "${GMXRC:-/usr/local/gromacs/bin/GMXRC}" 2>/dev/null || true
+# a gmx already on PATH is the one the caller meant; see scripts/3_equilibrate.sh
+command -v gmx >/dev/null 2>&1 || source "${GMXRC:-/usr/local/gromacs/bin/GMXRC}" 2>/dev/null || true
 set -uo pipefail
 
 GMX=${GMX:-gmx}

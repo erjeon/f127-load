@@ -1,0 +1,10 @@
+[ atomtypes ]
+; name  at.num   mass     charge  ptype     sigma       epsilon
+     CAL    20   40.08000     2.0000   A 2.435717095396e-01   5.020800e-01
+      MG    12   24.30500     2.0000   A 2.111429961993e-01   6.276000e-02
+     POT    19   39.09830     1.0000   A 3.142645228240e-01   3.640080e-01
+
+[ nonbond_params ]
+; i        j    func      sigma        epsilon
+     CLA     POT     1 3.635757668731e-01   4.778128e-01
+     CAL     CLA     1 3.320379522509e-01   5.613422e-01

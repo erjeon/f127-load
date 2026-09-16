@@ -1,0 +1,9 @@
+; CAL, converted from CHARMM by make_ion_itp.py
+
+[ moleculetype ]
+; name  nrexcl
+CAL       1
+
+[ atoms ]
+; nr  type  resnr  residu  atom  cgnr  charge      mass
+    1    CAL      1     CAL    CAL     1    2.000    40.08000
