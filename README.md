@@ -54,7 +54,8 @@ pip install "MDAnalysis>=2.8" numpy matplotlib
 ./f127 test system.json           # a short pass of every step
 ./f127 run  system.json 100       # build, equilibrate 2 ns, produce 100 ns
 ./f127 build system.json          # stop at the tpr and submit the MD yourself
-./f127 pack run_pyrene_solution   # tar.gz that reruns anywhere
+./f127 analyze run_pyrene_solution   # analyses and figures, once the run is done
+./f127 pack run_pyrene_solution      # tar.gz that reruns anywhere
 ```
 
 The config is the same JSON `docs/build.html` downloads, so either source builds the
@@ -72,8 +73,20 @@ same way. It can live anywhere; give its path.
 ```
 
 `route` is `solution`, `shell` or `both`. Everything lands in `run_<molecule>_<route>/`:
-the topology, the tpr, the xtc, and `analysis/` with the numbers and figures. Change a number
-in the config and run again.
+the topology, the tpr and the xtc. Change a number in the config and run again.
+
+`./f127 analyze` writes `analysis/` inside the run directory: the numbers as `.xvg`/`.dat`
+and nine figures in `analysis/figures/`.
+
+| figure | what it shows |
+|---|---|
+| `radial_density.png` | number density of PPO, PEO, water and the solute against distance from the micelle centre |
+| `encapsulation.png` | how many solute molecules sit inside the core over time |
+| `nwater.png` | water molecules within 0.35 nm of the solute over time (hydration) |
+| `rg.png`, `sasa.png` | radius of gyration and solvent-accessible surface of the micelle over time |
+| `rdf.png` | radial distribution of core, corona and water around the solute |
+| `lie.png` | Coulomb and van der Waals interaction energy of the solute with the core and with water over time |
+| `assoc_distance.png`, `assoc_angle.png` | solute–solute centroid distance and interplanar angle distributions |
 
 The scripts read `gmx --version` and pass GPU flags only to a build that has them. To
 override:

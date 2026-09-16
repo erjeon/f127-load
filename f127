@@ -6,6 +6,7 @@
 #   ./f127 build  cfg       build the system from system.json, stop at the tpr
 #   ./f127 run    cfg [ns]  build, equilibrate, then run
 #   ./f127 test   cfg       a short pass of all of it, to see that it works here
+#   ./f127 analyze dir [--begin ps]  the analyses and figures for a finished run
 #   ./f127 pack   dir       tar.gz of everything needed to rerun or to share
 #
 set -uo pipefail
@@ -28,6 +29,7 @@ case "$1" in
   # Everything runs and nothing is equilibrated. It answers whether the
   # tool works on this machine, not whether the answer is right.
   test)  shift; exec env NPT_NS=0.02 bash "$ROOT/scripts/1_build.sh" --run "$1" 0.05 ;;
+  analyze) shift; exec bash "$ROOT/scripts/5_analyze.sh" "$@" ;;
   pack)  shift; exec bash "$ROOT/scripts/9_pack.sh" "$@" ;;
   -h|--help|help) usage ;;
   *) echo "unknown command: $1"; usage ;;

@@ -171,10 +171,14 @@ pip install "MDAnalysis&gt;=2.8" numpy matplotlib
 ./f127 test system.json          <span class="c"># a short pass of every step, minutes</span>
 ./f127 run  system.json 100      <span class="c"># build, equilibrate 2 ns, produce 100 ns</span>
 ./f127 build system.json         <span class="c"># stop at the tpr and submit the MD yourself</span>
+./f127 analyze run_pyrene_solution <span class="c"># analyses and figures, once the run is done</span>
 ./f127 pack run_pyrene_solution  <span class="c"># tar.gz that reruns anywhere</span></code></pre>
-  <p class="sub">Everything lands in <code>run_&lt;molecule&gt;_&lt;route&gt;/</code>: the tpr,
-  the xtc, and <code>analysis/</code> with the numbers and figures. Change a number in the
-  config and run again; nothing else is asked.</p>
+  <p class="sub">Everything lands in <code>run_&lt;molecule&gt;_&lt;route&gt;/</code>: the tpr
+  and the xtc. <code>analyze</code> adds <code>analysis/</code> with the numbers and nine
+  figures: radial density of PPO, PEO, water and solute; solute count inside the core and
+  water within 0.35 nm of it over time; R<sub>g</sub> and SASA over time; RDF of core, corona
+  and water around the solute; solute&ndash;core and solute&ndash;water interaction energies;
+  solute&ndash;solute distance and angle distributions.</p>
 </section>
 
 <section>
