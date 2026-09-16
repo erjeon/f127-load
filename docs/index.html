@@ -118,8 +118,7 @@ footer{border-top:1px solid var(--rule);padding-top:26px;color:var(--muted);
   <p class="lede">Build and simulate Pluronic F127 micelles loaded with a hydrophobic
   solute, at all-atom resolution.</p>
   <p class="sub" style="margin-top:22px"><a href="build.html"><b>Open the system designer</b></a> &nbsp;Pick what you want, get a <code>system.json</code> back, and look at the structure it built in 3D.</p>
-  <p class="sub">Accompanies <em>Entry of a hydrophobic solute into the core interior of
-  Pluronic F127 micelles is slow: an all-atom molecular dynamics study</em>.</p>
+  <p class="sub">Accompanies <em>Outer-core localization of a hydrophobic solute in Pluronic&reg; F127 micelles from all-atom molecular dynamics</em>.</p>
 </header>
 
 <section class="scale">
@@ -128,7 +127,7 @@ footer{border-top:1px solid var(--rule);padding-top:26px;color:var(--muted);
   <p style="color:var(--muted);font-size:18px;max-width:58ch;margin:0">
   <code>data/f127_micelle_34.gro</code> holds 69,802 polymer atoms equilibrated for
   200 ns. Its poly(propylene oxide) core reaches 3.99 nm at the 90th percentile and the
-  corona runs out to roughly 7 nm.</p>
+  corona runs out to roughly 7 nm. The sequence is fixed: this one micelle is the structure every run starts from.</p>
 
   <div class="bar" role="img"
        aria-label="Radial map of the shipped micelle: core to 3.99 nanometres, corona to about 7 nanometres, water beyond.">
@@ -150,63 +149,6 @@ footer{border-top:1px solid var(--rule);padding-top:26px;color:var(--muted);
   </div>
 </section>
 
-<section>
-  <p class="kicker">One sequence</p>
-  <h2>Why F127 and not another Pluronic</h2>
-  <p class="prose" style="color:var(--muted)">A Pluronic is named by its block
-  sequence. The tool ships one equilibrated micelle, of the sequence below, and the
-  sequence is not an input: change it and the aggregation number, the core radius and
-  the corona thickness all change with it, so there is no structure left to load a
-  solute into. Building another one means a fresh chain from CHARMM-GUI and a fresh
-  equilibration, which is the part that takes the time.</p>
-
-  <div class="tw" style="margin-top:22px">
-  <table>
-    <thead><tr>
-      <th>Pluronic</th><th>sequence</th><th class="num">molar mass</th>
-      <th class="num">PO by mass</th>
-    </tr></thead>
-    <tbody>
-      <tr class="ref"><td>F127 &nbsp;ships</td>
-          <td>EO<sub>100</sub>&ndash;PO<sub>65</sub>&ndash;EO<sub>100</sub></td>
-          <td class="num">12,586</td><td class="num">30%</td></tr>
-      <tr><td>F108</td><td>EO<sub>132</sub>&ndash;PO<sub>50</sub>&ndash;EO<sub>132</sub></td>
-          <td class="num">14,534</td><td class="num">20%</td></tr>
-      <tr><td>F68</td><td>EO<sub>76</sub>&ndash;PO<sub>29</sub>&ndash;EO<sub>76</sub></td>
-          <td class="num">8,380</td><td class="num">20%</td></tr>
-      <tr><td>F87</td><td>EO<sub>61</sub>&ndash;PO<sub>40</sub>&ndash;EO<sub>61</sub></td>
-          <td class="num">7,698</td><td class="num">30%</td></tr>
-      <tr><td>P85</td><td>EO<sub>26</sub>&ndash;PO<sub>40</sub>&ndash;EO<sub>26</sub></td>
-          <td class="num">4,614</td><td class="num">50%</td></tr>
-      <tr><td>P123</td><td>EO<sub>20</sub>&ndash;PO<sub>70</sub>&ndash;EO<sub>20</sub></td>
-          <td class="num">5,828</td><td class="num">70%</td></tr>
-      <tr><td>L64</td><td>EO<sub>13</sub>&ndash;PO<sub>30</sub>&ndash;EO<sub>13</sub></td>
-          <td class="num">2,888</td><td class="num">60%</td></tr>
-    </tbody>
-  </table>
-  </div>
-  <p class="sub">Molar mass in g mol<sup>&minus;1</sup>, from the block lengths at 44.05
-  and 58.08 g mol<sup>&minus;1</sup> per repeat unit. The figure for F127 is the one in
-  <code>data/toppar/S1P1.itp</code>.</p>
-
-  <details>
-    <summary>What it would take to use another one</summary>
-    <div class="body">
-      <p>The chain itself is the easy part: CHARMM-GUI returns a topology for any block
-      sequence. What does not carry across is the micelle. The aggregation number is a
-      property of the sequence and the temperature, the core radius follows from it, and
-      the corona thickness follows from the EO block length, so the shipped structure
-      describes F127 and nothing else.</p>
-      <p>A more hydrophobic sequence changes what the tool is for as well. P123 is 70 per
-      cent PO by mass against 30 for F127, so its core is larger relative to the corona
-      and it holds more solute, but it also aggregates at a far lower concentration.</p>
-      <p>What can be answered without building anything is the cost. Give the block
-      lengths and an aggregation number and <code>plan_size.py</code> returns the core
-      radius, the box edge and the atom count, so the size of the job is known before
-      the first structure is made.</p>
-    </div>
-  </details>
-</section>
 
 <section>
   <p class="kicker">Choosing a size</p>
@@ -241,35 +183,14 @@ footer{border-top:1px solid var(--rule);padding-top:26px;color:var(--muted);
   </div>
   <p class="sub">Box edge and clearance in nm, polymer in wt%. Rates are for one RTX 3090, scaled
   from the measured 43.1 ns/day at 577,146 atoms. On the default box an RTX 5090 gave 106 ns/day
-  and an RTX 3070 39 ns/day.
-  <strong>Past 22 nm the system is a large one.</strong></p>
+  and an RTX 3070 39 ns/day.</p>
 
-  <details>
-    <summary>Why the weight fraction is not asked for</summary>
-    <div class="body">
-      <p>With the chain count fixed, the polymer weight fraction is the box edge said
-      another way: the polymer mass does not change, so the volume sets the fraction.
-      Offering both invited a dilute answer that tripled the cost of a run without
-      changing what it could show. A single micelle with one solute behaves the same at
-      10.9 wt% as at 4.3 wt%; what changes is how far apart the periodic copies sit.</p>
-      <p>The weight fraction is written into the settings file as a reading, and the
-      build does not consult it.</p>
-      <p>A genuinely concentrated system is reached the way the paper reached one, by
-      taking an equilibrated box and removing water rather than by building a small one.
-      <code>scripts/densify.py</code> does that, and the barostat compresses the box
-      afterwards. Shrinking a box around a fixed configuration folds the corona onto the
-      core instead, and minimisation then reports an infinite force.</p>
-      <p style="margin-top:14px"><code>python3 scripts/densify.py in.gro out.gro topol.top 0.15</code></p>
-    </div>
-  </details>
 </section>
 
 <section>
   <p class="kicker">Two loading routes</p>
   <h2>Start from both ends, not one</h2>
-  <p class="prose" style="color:var(--muted)">Simulations of drug-loaded micelles usually
-  begin with the drug already inside the core, so the answer is settled by that choice.
-  This tool builds both ends of the coordinate so the two can be compared.</p>
+  <p class="prose" style="color:var(--muted)">The tool builds both starting points, so the two can be compared.</p>
   <div class="routes">
     <div class="route">
       <h3>Shell closure</h3>
@@ -278,8 +199,7 @@ footer{border-top:1px solid var(--rule);padding-top:26px;color:var(--muted);
     </div>
     <div class="route">
       <h3>Uptake from solution</h3>
-      <p>The solute is dispersed in bulk water and enters unaided. This is the situation
-      drug loading actually presents.</p>
+      <p>The solute is dispersed in bulk water and enters unaided.</p>
     </div>
   </div>
 </section>
@@ -293,27 +213,25 @@ bash 0_check.sh
 <span class="c"># put a CGenFF topology in library/&lt;name&gt;/ first</span>
 python3 -m f127load.check_params library/pyrene   <span class="c"># penalties</span>
 ./f127 check                     <span class="c"># what is installed, what is missing</span>
-./f127 new                       <span class="c"># a few questions, writes system.cfg</span>
-./f127 run system.cfg 100        <span class="c"># build, equilibrate, run 100 ns</span>
+./f127 new                       <span class="c"># a few questions, writes system.json</span>
+./f127 test system.json          <span class="c"># a short pass of everything</span>
+./f127 run  system.json 100      <span class="c"># build, equilibrate, run 100 ns</span>
 
-./f127 build system.cfg          <span class="c"># stop at the tpr and run the MD yourself</span>
+./f127 build system.json         <span class="c"># stop at the tpr and run the MD yourself</span>
 ./f127 pack  run_pyrene_solution <span class="c"># tar.gz that rebuilds anywhere</span></code></pre>
 
   <details>
     <summary>What each stage does</summary>
     <div class="body">
-      <p><code>0_check.sh</code> finds the local GROMACS instead of assuming one, parses
-      its version and writes <code>compat.json</code>. Below 2021 it falls back from the
-      C-rescale barostat to Parrinello-Rahman and says so. Below 2019 it stops.</p>
+      <p><code>0_check.sh</code> finds the local GROMACS, reads its version and writes
+      <code>compat.json</code>. Below 2021 it uses Parrinello-Rahman instead of C-rescale.
+      Below 2019 it stops.</p>
+      <p><code>1_build.sh</code> reads <code>system.json</code> and sets up the run directory.</p>
       <p><code>2_load.sh</code> places the solute, by the shell route or in bulk water,
       solvates, adds ions and minimises.</p>
-      <p><code>3_equilibrate.sh</code> minimises by steepest descent, then equilibrates
-      in the isothermal-isobaric ensemble at 310.15 K and 1 bar. No position restraints:
-      the solute is placed in a cavity that is already there, so there is nothing to hold
-      while the surroundings relax.</p>
-      <p><code>4_production.sh</code> runs the unrestrained trajectory. Compressed
-      coordinates only, no full-precision output, because a single window of that costs
-      more storage than the whole rest of the study.</p>
+      <p><code>3_equilibrate.sh</code> minimises, then equilibrates at 310.15 K and 1 bar.
+      No position restraints.</p>
+      <p><code>4_production.sh</code> runs the production trajectory, compressed coordinates only.</p>
       <p><code>5_analyze.sh</code> produces radial density, uptake counts, RDF,
       interaction energies, hydration numbers, SASA, radius of gyration and
       solute-solute association.</p>
@@ -329,24 +247,26 @@ python3 -m f127load.check_params library/pyrene   <span class="c"># penalties</s
   f127_micelle_34_pyrene8.gro  <span>the same with 8 pyrene inside</span>
   f127_shell_template.gro      <span>hollow PPO shell for the closure route</span>
   tip3p.gro                    <span>solvent box</span>
-  <b>toppar/</b>  forcefield.itp, TIP3.itp, SOD.itp, CLA.itp,
-            water_types.itp, S1P1.itp
+  <b>toppar/</b>  forcefield.itp, S1P1.itp, TIP3.itp, water_types.itp,
+            SOD.itp, CLA.itp, POT.itp, CAL.itp, MG.itp, ion_types.itp
 
 <b>f127load/</b>
+  wizard.py, ui.py, config.py   <span>./f127 new and the config it writes</span>
   plan_size.py     <span>box edge, atom count and run time for N chains</span>
   capacity.py      <span>how many solute molecules fit in the core</span>
   check_params.py  <span>CGenFF charge and parameter penalties</span>
-  load.py          <span>placement</span>
 
 <b>scripts/</b>
-  2_load.sh  3_equilibrate.sh  4_production.sh  5_analyze.sh
-  place_guest.py  densify.py  mkndx.py  radial.py  pipi.py
-  plot_all.py  clean_meta.py
+  1_build.sh  2_load.sh  3_equilibrate.sh  4_production.sh  5_analyze.sh
+  9_pack.sh  9_ship.sh  _gmxenv.sh  read_config.py  find_config.py
+  place_guest.py  densify.py  mkndx.py  radial.py  pipi.py  plot_all.py
+  check_library.py  make_ff_fragment.py  make_ion_itp.py
 
 <b>mdp/</b>       em.mdp  npt.mdp  prod.mdp
 <b>library/</b>   one directory per molecule, see below
-<b>tests/</b>     smoke_test.sh  param_smoke.sh
-0_check.sh   capacity_table.csv   LICENSE   README.md</pre>
+<b>tests/</b>     smoke_test.sh  param_smoke.sh  edge_test.sh
+<b>docs/</b>      this page, build.html (system designer), tester.html
+f127   0_check.sh   capacity_table.csv   LICENSE   README.md</pre>
 
   <details>
     <summary>What a library entry holds</summary>
@@ -355,9 +275,6 @@ python3 -m f127load.check_params library/pyrene   <span class="c"># penalties</s
       a <code>.pdb</code> and a <code>.mol2</code> with 3D coordinates, and once
       CHARMM-GUI has been run, the topology and <code>RESNAME.txt</code>. The pyrene entry
       also keeps <code>CHARMMGUI_JOBID.txt</code> so the parameter run can be traced.</p>
-      <p>Stereochemistry is verified against PubChem or the RCSB chemical dictionary
-      rather than typed from memory. Paclitaxel in particular came out wrong from a 2D
-      structure and had to be taken from the RCSB ideal coordinates.</p>
     </div>
   </details>
 </section>
@@ -386,39 +303,13 @@ python3 -m f127load.check_params library/pyrene   <span class="c"># penalties</s
 </section>
 
 <section class="prose">
-  <p class="kicker">Limits</p>
-  <h2>What it does not do</h2>
-  <p>It does not run CGenFF itself.
-  <a href="https://charmm-gui.org/?doc=input/ligandrm">CHARMM-GUI Ligand Reader and
-  Modeler</a> does that part: it looks the molecule up in the CHARMM force field library
-  and falls back to CGenFF for whatever is not already there, then returns the topology
-  with a penalty on every charge and every bonded term. Drop what it sends into
-  <code>library/&lt;name&gt;/</code>. Those penalties are what <code>check_params</code>
-  reads.</p>
-  <div class="note">
-    <h3>Read the penalties before you trust a result</h3>
-    <p><code>check_params</code> reports the CGenFF charge and parameter penalties. For a
-    question about where a molecule sits, the charge penalty is what matters, because
-    partitioning between a dry core and water is driven by electrostatics. A high dihedral
-    penalty on a rigid fused ring is usually harmless. Above about 50 on charge,
-    reparameterise.</p>
-  </div>
-  <details>
-    <summary>Things that cost us time, so they need not cost you any</summary>
-    <div class="body">
-      <p>A CHARMM-GUI export carries only the atom types the uploaded molecule uses, so
-      the water types are missing and have to be supplied. <code>gmx solvate</code> writes
-      <code>SOL</code> into the topology while the CHARMM water is called
-      <code>TIP3</code>: rename it in the topology only, never in the coordinate file,
-      which is fixed format and shifts a column if you touch it.</p>
-      <p>Atom numbers in a <code>.gro</code> wrap at 99,999. Any index built from them for
-      a system this size is wrong, silently. Build indices from atom order, not from the
-      numbers in the file.</p>
-      <p>Check trajectories with <code>gmx check</code> before analysing them. A file that
-      has been truncated by a full disk still opens in MDAnalysis, which seeks by index
-      and reports nothing.</p>
-    </div>
-  </details>
+  <p class="kicker">Parameters</p>
+  <h2>Where a topology comes from</h2>
+  <p><a href="https://charmm-gui.org/?doc=input/ligandrm">CHARMM-GUI Ligand Reader and
+  Modeler</a> returns a CHARMM36/CGenFF topology for the molecule with a penalty on every
+  charge and bonded term. Drop what it sends into <code>library/&lt;name&gt;/</code>;
+  <code>check_params</code> reads the penalties, and above about 50 on charge the molecule
+  should be reparameterised.</p>
 </section>
 
 <footer>
