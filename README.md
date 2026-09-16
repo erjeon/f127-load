@@ -137,6 +137,10 @@ bash tests/edge_test.sh 3           # smallest and largest system the tool accep
 * N. Michaud-Agrawal, E.J. Denning, T.B. Woolf, and O. Beckstein (2011). MDAnalysis: A
   toolkit for the analysis of molecular dynamics simulations. *J. Comput. Chem.*
   32:2319-2327. DOI: 10.1002/jcc.21787
+* R.J. Gowers, M. Linke, J. Barnoud, T.J.E. Reddy, M.N. Melo, S.L. Seyler, D.L. Dotson,
+  J. Domanski, S. Buchoux, I.M. Kenney, and O. Beckstein (2016). MDAnalysis: A Python package
+  for the rapid analysis of molecular dynamics simulations. *Proceedings of the 15th Python in
+  Science Conference* 98-105. DOI: 10.25080/majora-629e541a-00e
 
 ## Licence
 
