@@ -115,201 +115,76 @@ footer{border-top:1px solid var(--rule);padding-top:26px;color:var(--muted);
 <header>
   <p class="kicker">GROMACS, CHARMM36 and CGenFF</p>
   <h1>f127-load</h1>
-  <p class="lede">Build and simulate Pluronic F127 micelles loaded with a hydrophobic
+  <p class="lede">Build and simulate a Pluronic&reg; F127 micelle loaded with a hydrophobic
   solute, at all-atom resolution.</p>
-  <p class="sub" style="margin-top:22px"><a href="build.html"><b>Open the system designer</b></a> &nbsp;Pick what you want, get a <code>system.json</code> back, and look at the structure it built in 3D.</p>
-  <p class="sub">Accompanies <em>Outer-core localization of a hydrophobic solute in Pluronic&reg; F127 micelles from all-atom molecular dynamics</em>.</p>
+  <p class="sub" style="margin-top:22px"><a href="build.html"><b>Open the system designer</b></a>
+  &nbsp;Pick the solute, the box and the ions, download <code>system.json</code>, and run it.</p>
+  <p class="sub">Accompanies <em>Outer-core localization of a hydrophobic solute in Pluronic&reg; F127
+  micelles from all-atom molecular dynamics</em>.</p>
 </header>
 
-<section class="scale">
-  <p class="kicker">The micelle in the box</p>
-  <h2 style="font-size:23px">34 chains of PEO<sub>100</sub>&ndash;PPO<sub>65</sub>&ndash;PEO<sub>100</sub></h2>
-  <p style="color:var(--muted);font-size:18px;max-width:58ch;margin:0">
-  <code>data/f127_micelle_34.gro</code> holds 69,802 polymer atoms equilibrated for
-  200 ns. Its poly(propylene oxide) core reaches 3.99 nm at the 90th percentile and the
-  corona runs out to roughly 7 nm. The sequence is fixed: this one micelle is the structure every run starts from.</p>
-
-  <div class="bar" role="img"
-       aria-label="Radial map of the shipped micelle: core to 3.99 nanometres, corona to about 7 nanometres, water beyond.">
-    <div class="band" style="left:0;width:49.9%;background:var(--core)"></div>
-    <div class="band" style="left:49.9%;width:37.6%;background:var(--corona)"></div>
-    <div class="band" style="left:87.5%;width:12.5%;background:var(--water);opacity:.45"></div>
-    <div class="tick" style="left:0"></div><div class="tick" style="left:49.9%"></div>
-    <div class="tick" style="left:87.5%"></div>
-    <div class="lab" style="left:0;transform:none">0</div>
-    <div class="lab" style="left:49.9%">3.99 nm</div>
-    <div class="lab" style="left:87.5%">7 nm</div>
-    <div class="lab" style="left:100%;transform:translateX(-100%)">8</div>
-  </div>
-
-  <div class="legend">
-    <span><i style="background:var(--core)"></i>poly(propylene oxide), the core</span>
-    <span><i style="background:var(--corona)"></i>poly(ethylene oxide), the corona</span>
-    <span><i style="background:var(--water);opacity:.45"></i>water</span>
-  </div>
+<section class="prose">
+  <p class="kicker">What it does</p>
+  <h2>One micelle, one solute, one run</h2>
+  <p>The tool ships a 34-chain PEO<sub>100</sub>&ndash;PPO<sub>65</sub>&ndash;PEO<sub>100</sub>
+  micelle equilibrated for 200 ns. It places the solute either in bulk water, to watch it enter,
+  or at the centre of a hollow PPO shell that closes around it, then solvates, adds ions,
+  minimises, equilibrates at 310.15 K and 1 bar and runs production. The analysis step returns
+  radial density, uptake counts, RDF, interaction energies, hydration, SASA, radius of gyration
+  and solute&ndash;solute association, with figures.</p>
 </section>
 
-
 <section>
-  <p class="kicker">Choosing a size</p>
-  <h2>How big a box?</h2>
-  <p class="prose" style="color:var(--muted)">One micelle sits in the box, and the
-  34 chains that ship are the only structure there is, so the box edge is the one
-  size to choose. It decides how much water surrounds the micelle, and water is
-  most of the cost. The default, 18 nm, leaves 2 nm between the corona and the box
-  face where 1.5 nm is the least that keeps the micelle away from its own image.</p>
-
-  <div class="tw" style="margin-top:22px">
+  <p class="kicker">What you need</p>
+  <h2>Requirements</h2>
+  <div class="tw">
   <table>
-    <thead><tr>
-      <th>box</th><th class="num">clearance</th><th class="num">polymer</th>
-      <th class="num">atoms</th><th class="num">ns/day</th>
-    </tr></thead>
+    <thead><tr><th></th><th>version</th><th class="wrap-ok">for</th></tr></thead>
     <tbody>
-      <tr><td>17.0 &nbsp;the least</td><td class="num">1.50</td><td class="num">12.6</td>
-          <td class="num">491,970</td><td class="num">50.6</td></tr>
-      <tr class="ref"><td>18.0 &nbsp;default</td><td class="num">2.00</td><td class="num">10.9</td>
-          <td class="num">584,054</td><td class="num">42.6</td></tr>
-      <tr><td>20.0</td><td class="num">3.00</td><td class="num">8.2</td>
-          <td class="num">801,288</td><td class="num">31.0</td></tr>
-      <tr class="big"><td>22.0</td><td class="num">4.00</td><td class="num">6.3</td>
-          <td class="num">1,066,617</td><td class="num">23.3</td></tr>
-      <tr class="big"><td>25.0</td><td class="num">5.50</td><td class="num">4.3</td>
-          <td class="num">1,565,313</td><td class="num">15.9</td></tr>
-      <tr class="big"><td>30.0</td><td class="num">8.00</td><td class="num">2.6</td>
-          <td class="num">2,705,088</td><td class="num">9.2</td></tr>
+      <tr><td>GROMACS</td><td>2019 or later, GPU build</td><td class="wrap-ok">building and running</td></tr>
+      <tr><td>Python</td><td>3.8 or later</td><td class="wrap-ok">everything</td></tr>
+      <tr><td>NumPy</td><td>any recent</td><td class="wrap-ok">building and running</td></tr>
+      <tr><td>MDAnalysis</td><td>2.8</td><td class="wrap-ok">the analysis step</td></tr>
+      <tr><td>matplotlib</td><td>any recent</td><td class="wrap-ok">the figures</td></tr>
+      <tr><td>CHARMM-GUI</td><td>account</td><td class="wrap-ok">only to add a molecule that is not in the library</td></tr>
     </tbody>
   </table>
   </div>
-  <p class="sub">Box edge and clearance in nm, polymer in wt%. Rates are for one RTX 3090, scaled
-  from the measured 43.1 ns/day at 577,146 atoms. On the default box an RTX 5090 gave 106 ns/day
-  and an RTX 3070 39 ns/day.</p>
-
+  <p class="sub">A GPU is what makes it practical: about 40 to 100 ns/day on one RTX 3070 to
+  5090 for the default box, against 1.4 ns/day on a laptop CPU.</p>
 </section>
 
 <section>
-  <p class="kicker">Two loading routes</p>
-  <h2>Start from both ends, not one</h2>
-  <p class="prose" style="color:var(--muted)">The tool builds both starting points, so the two can be compared.</p>
-  <div class="routes">
-    <div class="route">
-      <h3>Shell closure</h3>
-      <p>A hollow poly(propylene oxide) shell is closed around solute placed at the
-      centre. The solute starts as deep as it can go.</p>
-    </div>
-    <div class="route">
-      <h3>Uptake from solution</h3>
-      <p>The solute is dispersed in bulk water and enters unaided.</p>
-    </div>
-  </div>
+  <p class="kicker">Install</p>
+  <h2>Clone and check</h2>
+<pre><code>git clone https://github.com/erjeon/f127-load
+cd f127-load
+python3 -m venv venv &amp;&amp; source venv/bin/activate
+pip install "MDAnalysis&gt;=2.8" numpy matplotlib
+./f127 check                     <span class="c"># which GROMACS, which GPU, what is missing</span></code></pre>
 </section>
 
 <section>
-  <p class="kicker">Running it</p>
-  <h2>From a topology to a production run</h2>
-<pre><code><span class="c"># GROMACS, python and the force field files</span>
-bash 0_check.sh
-
-<span class="c"># put a CGenFF topology in library/&lt;name&gt;/ first</span>
-python3 -m f127load.check_params library/pyrene   <span class="c"># penalties</span>
-./f127 check                     <span class="c"># what is installed, what is missing</span>
-./f127 new                       <span class="c"># a few questions, writes system.json</span>
-./f127 test system.json          <span class="c"># a short pass of everything</span>
-./f127 run  system.json 100      <span class="c"># build, equilibrate, run 100 ns</span>
-
-./f127 build system.json         <span class="c"># stop at the tpr and run the MD yourself</span>
-./f127 pack  run_pyrene_solution <span class="c"># tar.gz that rebuilds anywhere</span></code></pre>
-
-  <details>
-    <summary>What each stage does</summary>
-    <div class="body">
-      <p><code>0_check.sh</code> finds the local GROMACS, reads its version and writes
-      <code>compat.json</code>. Below 2021 it uses Parrinello-Rahman instead of C-rescale.
-      Below 2019 it stops.</p>
-      <p><code>1_build.sh</code> reads <code>system.json</code> and sets up the run directory.</p>
-      <p><code>2_load.sh</code> places the solute, by the shell route or in bulk water,
-      solvates, adds ions and minimises.</p>
-      <p><code>3_equilibrate.sh</code> minimises, then equilibrates at 310.15 K and 1 bar.
-      No position restraints.</p>
-      <p><code>4_production.sh</code> runs the production trajectory, compressed coordinates only.</p>
-      <p><code>5_analyze.sh</code> produces radial density, uptake counts, RDF,
-      interaction energies, hydration numbers, SASA, radius of gyration and
-      solute-solute association.</p>
-    </div>
-  </details>
-</section>
-
-<section>
-  <p class="kicker">Repository</p>
-  <h2>What is in it</h2>
-<pre class="tree"><b>data/</b>
-  f127_micelle_34.gro          <span>34 chains, 200 ns, ready to load</span>
-  f127_micelle_34_pyrene8.gro  <span>the same with 8 pyrene inside</span>
-  f127_shell_template.gro      <span>hollow PPO shell for the closure route</span>
-  tip3p.gro                    <span>solvent box</span>
-  <b>toppar/</b>  forcefield.itp, S1P1.itp, TIP3.itp, water_types.itp,
-            SOD.itp, CLA.itp, POT.itp, CAL.itp, MG.itp, ion_types.itp
-
-<b>f127load/</b>
-  wizard.py, ui.py, config.py   <span>./f127 new and the config it writes</span>
-  plan_size.py     <span>box edge, atom count and run time for N chains</span>
-  capacity.py      <span>how many solute molecules fit in the core</span>
-  check_params.py  <span>CGenFF charge and parameter penalties</span>
-
-<b>scripts/</b>
-  1_build.sh  2_load.sh  3_equilibrate.sh  4_production.sh  5_analyze.sh
-  9_pack.sh  9_ship.sh  _gmxenv.sh  read_config.py  find_config.py
-  place_guest.py  densify.py  mkndx.py  radial.py  pipi.py  plot_all.py
-  check_library.py  make_ff_fragment.py  make_ion_itp.py
-
-<b>mdp/</b>       em.mdp  npt.mdp  prod.mdp
-<b>library/</b>   one directory per molecule, see below
-<b>tests/</b>     smoke_test.sh  param_smoke.sh  edge_test.sh
-<b>docs/</b>      this page, build.html (system designer), tester.html
-f127   0_check.sh   capacity_table.csv   LICENSE   README.md</pre>
-
-  <details>
-    <summary>What a library entry holds</summary>
-    <div class="body">
-      <p>Each molecule directory carries <code>SMILES.txt</code> with an isomeric SMILES,
-      a <code>.pdb</code> and a <code>.mol2</code> with 3D coordinates, and once
-      CHARMM-GUI has been run, the topology and <code>RESNAME.txt</code>. The pyrene entry
-      also keeps <code>CHARMMGUI_JOBID.txt</code> so the parameter run can be traced.</p>
-    </div>
-  </details>
+  <p class="kicker">Run</p>
+  <h2>Config in, trajectory out</h2>
+<pre><code><span class="c"># system.json from the designer, or ./f127 new to answer a few questions instead</span>
+./f127 test system.json          <span class="c"># a short pass of every step, minutes</span>
+./f127 run  system.json 100      <span class="c"># build, equilibrate 2 ns, produce 100 ns</span>
+./f127 build system.json         <span class="c"># stop at the tpr and submit the MD yourself</span>
+./f127 pack run_pyrene_solution  <span class="c"># tar.gz that reruns anywhere</span></code></pre>
+  <p class="sub">Everything lands in <code>run_&lt;molecule&gt;_&lt;route&gt;/</code>: the tpr,
+  the xtc, and <code>analysis/</code> with the numbers and figures. Change a number in the
+  config and run again; nothing else is asked.</p>
 </section>
 
 <section>
   <p class="kicker">Library</p>
-  <h2>Molecules you can load</h2>
-  <div class="tw">
-  <table>
-    <thead><tr><th>molecule</th><th class="wrap-ok">why it is here</th></tr></thead>
-    <tbody>
-      <tr><td>pyrene</td><td class="wrap-ok">the polarity probe the accompanying paper uses</td></tr>
-      <tr><td>doxorubicin</td><td class="wrap-ok">the drug most often loaded into Pluronics</td></tr>
-      <tr><td>paclitaxel</td><td class="wrap-ok">the other one, and a hard parameterisation case</td></tr>
-      <tr><td>docetaxel</td><td class="wrap-ok">its close relative</td></tr>
-      <tr><td>curcumin</td><td class="wrap-ok">compares against published micelle simulations</td></tr>
-      <tr><td>aspirin</td><td class="wrap-ok">small and weakly hydrophobic, a lower bound</td></tr>
-      <tr><td>ibuprofen</td><td class="wrap-ok">acidic, tests a charged solute</td></tr>
-      <tr><td>indomethacin</td><td class="wrap-ok">bulkier acid</td></tr>
-      <tr><td>nile red</td><td class="wrap-ok">a solvatochromic dye</td></tr>
-      <tr><td>quercetin</td><td class="wrap-ok">polyphenol, many hydrogen bond donors</td></tr>
-      <tr><td>resveratrol</td><td class="wrap-ok">smaller polyphenol</td></tr>
-    </tbody>
-  </table>
-  </div>
-</section>
-
-<section class="prose">
-  <p class="kicker">Parameters</p>
-  <h2>Where a topology comes from</h2>
-  <p><a href="https://charmm-gui.org/?doc=input/ligandrm">CHARMM-GUI Ligand Reader and
-  Modeler</a> returns a CHARMM36/CGenFF topology for the molecule with a penalty on every
-  charge and bonded term. Drop what it sends into <code>library/&lt;name&gt;/</code>;
-  <code>check_params</code> reads the penalties, and above about 50 on charge the molecule
-  should be reparameterised.</p>
+  <h2>Molecules with parameters</h2>
+  <p class="prose">pyrene, doxorubicin (neutral and protonated), paclitaxel, docetaxel,
+  curcumin, aspirin, ibuprofen, indomethacin, nile red, quercetin, resveratrol. For anything
+  else, run <a href="https://charmm-gui.org/?doc=input/ligandrm">CHARMM-GUI Ligand Reader</a>,
+  drop the result into <code>library/&lt;name&gt;/</code>, and
+  <code>python3 -m f127load.check_params library/&lt;name&gt;</code> reports the CGenFF penalties.</p>
 </section>
 
 <footer>
