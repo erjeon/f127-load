@@ -2,8 +2,8 @@
 # One entry point. Everything else is reachable from here.
 #
 #   ./f127 check            what is installed, what is missing, how to install it
-#   ./f127 new              answer a few questions, get system.cfg
-#   ./f127 build  cfg       build the system from system.cfg, stop at the tpr
+#   ./f127 new              answer a few questions, get system.json
+#   ./f127 build  cfg       build the system from system.json, stop at the tpr
 #   ./f127 run    cfg [ns]  build, equilibrate, then run
 #   ./f127 test   cfg       a short pass of all of it, to see that it works here
 #   ./f127 pack   dir       tar.gz of everything needed to rerun or to share

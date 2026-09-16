@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Build, and optionally run, the system described by a config from `f127 new`.
 #
-#   bash scripts/1_build.sh system.cfg            build only, stops at the tpr
-#   bash scripts/1_build.sh --run system.cfg 100  build, equilibrate, run 100 ns
+#   bash scripts/1_build.sh system.json           build only, stops at the tpr
+#   bash scripts/1_build.sh --run system.json 100 build, equilibrate, run 100 ns
 #
 # route "both" builds two directories from one config so the pair differs only
 # in where the solute started, which is the comparison the paper rests on.

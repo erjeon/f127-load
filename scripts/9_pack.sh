@@ -36,7 +36,7 @@ done
 cat > "$STAGE/$NAME/README.txt" <<TXT
 Built with f127-load.  $(date -u '+%Y-%m-%d %H:%M UTC')
 
-  system.cfg    the choices this system was built from
+  system.json   the choices this system was built from
   topol.top     topology, include files are in toppar/
   toppar/       the polymer, water and ion parameters
   ff/           the solute topology and the parameters CHARMM-GUI supplied

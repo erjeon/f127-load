@@ -158,8 +158,8 @@ results can sit on a different disk from the clone.
 
 ```bash
 ./f127 check                 # what is installed, what is missing
-./f127 new                   # a few questions, writes system.cfg
-./f127 run system.cfg 100    # build, equilibrate, run 100 ns
+./f127 new                   # a few questions, writes system.json
+./f127 run system.json 100   # build, equilibrate, run 100 ns
 ```
 
 That is the whole sequence. `run` builds the system, minimises it, equilibrates
@@ -167,27 +167,23 @@ That is the whole sequence. `run` builds the system, minimises it, equilibrates
 `run_<molecule>_<route>/` behind. `./f127 build` does the same up to the tpr and
 stops, for anyone who would rather submit the MD themselves.
 
-The config is plain text and worth reading:
+The config is the same JSON the browser designer (`docs/build.html`) downloads,
+so either source builds the same way:
 
-```
-# --- the micelle ---
-chains   34                       # the only structure that ships
-box      18.00 nm                 # 2.00 nm clear of the face, 1.5 is the least
-
-# --- ions ---
-NaCl     0.1470 M                 # 435 SOD and 435 CLA
-KCl      0.0041 M                 # 12 POT and 12 CLA
-
-# --- the solute ---
-guest    pyrene                   # 0.187 nm3, 202.3 g/mol
-count    20                       # 6.8 mM, 0.9 wt% of the polymer
-
-# --- where it starts ---
-route    solution                 # solution, shell or both
+```json
+{
+  "n_chains": 34,
+  "box_nm": 18.0,
+  "salts": {"NaCl": 0.147, "KCl": 0.0041},
+  "guest": "pyrene",
+  "n_guest": 20,
+  "route": "solution"
+}
 ```
 
 Change a number and run `./f127 run` again. There is no need to go back through
-the questions.
+the questions. The wizard adds a `notes` object saying where each number came
+from; the build ignores it.
 
 ### Trying it without waiting a day
 
@@ -297,14 +293,29 @@ there is no network, so they work offline on a cluster node.
 
 ## Citing
 
-If you use this repository, please cite the accompanying paper and:
+If you use this repository, please cite the accompanying paper and the tools it
+is built on. CHARMM-GUI asks for the first three.
 
-* S. Kim, *et al.*, CHARMM-GUI ligand reader and modeler for CHARMM force field generation of
-  small molecules, *J. Comput. Chem.* **38**, 1879 (2017). DOI: 10.1002/jcc.24829
-* K. Vanommeslaeghe, *et al.*, CHARMM general force field, *J. Comput. Chem.* **31**, 671
-  (2010). DOI: 10.1002/jcc.21367
-* M. J. Abraham, *et al.*, GROMACS, *SoftwareX* **1–2**, 19 (2015).
-  DOI: 10.1016/j.softx.2015.06.001
+* S. Jo, T. Kim, V.G. Iyer, and W. Im (2008). CHARMM-GUI: A Web-based Graphical User
+  Interface for CHARMM. *J. Comput. Chem.* 29:1859-1865. DOI: 10.1002/jcc.20945
+* J. Lee, X. Cheng, J.M. Swails, M.S. Yeom, P.K. Eastman, J.A. Lemkul, S. Wei, J. Buckner,
+  J.C. Jeong, Y. Qi, S. Jo, V.S. Pande, D.A. Case, C.L. Brooks III, A.D. MacKerell Jr,
+  J.B. Klauda, and W. Im (2016). CHARMM-GUI Input Generator for NAMD, GROMACS, AMBER,
+  OpenMM, and CHARMM/OpenMM Simulations using the CHARMM36 Additive Force Field.
+  *J. Chem. Theory Comput.* 12:405-413. DOI: 10.1021/acs.jctc.5b00935
+* S. Kim, J. Lee, S. Jo, C.L. Brooks III, H.S. Lee, and W. Im (2017). CHARMM-GUI Ligand
+  Reader and Modeler for CHARMM Force Field Generation of Small Molecules.
+  *J. Comput. Chem.* 38:1879-1886. DOI: 10.1002/jcc.24829
+* K. Vanommeslaeghe, E. Hatcher, C. Acharya, S. Kundu, S. Zhong, J. Shim, E. Darian,
+  O. Guvench, P. Lopes, I. Vorobyov, and A.D. MacKerell Jr (2010). CHARMM General Force
+  Field: A force field for drug-like molecules compatible with the CHARMM all-atom additive
+  biological force fields. *J. Comput. Chem.* 31:671-690. DOI: 10.1002/jcc.21367
+* M.J. Abraham, T. Murtola, R. Schulz, S. Páll, J.C. Smith, B. Hess, and E. Lindahl (2015).
+  GROMACS: High performance molecular simulations through multi-level parallelism from
+  laptops to supercomputers. *SoftwareX* 1-2:19-25. DOI: 10.1016/j.softx.2015.06.001
+* N. Michaud-Agrawal, E.J. Denning, T.B. Woolf, and O. Beckstein (2011). MDAnalysis: A
+  toolkit for the analysis of molecular dynamics simulations. *J. Comput. Chem.*
+  32:2319-2327. DOI: 10.1002/jcc.21787
 
 ## Licence
 

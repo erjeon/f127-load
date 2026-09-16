@@ -4,7 +4,7 @@
 Kept out of 1_build.sh because a here-document inside a process substitution is
 awkward to get right and impossible to test on its own. This can be run by hand:
 
-    python scripts/read_config.py system.cfg
+    python scripts/read_config.py system.json
 
 Pukyong National University / NCHM Lab.  Eunryul Jeon <qlsguswjs@pukyong.ac.kr>
 """
@@ -24,7 +24,7 @@ def main():
     # traceback out of pathlib, which reads as a broken tool rather than as a
     # name that does not exist.
     if len(sys.argv) < 2:
-        sys.exit("usage: read_config.py system.cfg")
+        sys.exit("usage: read_config.py system.json")
     if not Path(sys.argv[1]).is_file():
         sys.exit(f"[failed] no such config: {sys.argv[1]}")
     c = config.read(sys.argv[1])
@@ -73,7 +73,10 @@ def main():
                     f"{v['n_anion']}:{v.get('cation_charge', 1)}"
                     for k, v in counts.items()) or "-"
     first = next(iter(counts), "none")
-    conc = c.get(first, c.get("salt_M", 0.0)) if first != "none" else 0.0
+    conc = 0.0
+    if first != "none":
+        nested = c.get("salts") if isinstance(c.get("salts"), dict) else {}
+        conc = c.get(first, nested.get(first, c.get("salt_M", 0.0)))
     # How many start inside the hollow, which the shell route holds far fewer of
     # than the water around it. A settings file written before this existed says
     # nothing, and then both systems take the same count, which is what used to

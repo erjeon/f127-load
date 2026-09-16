@@ -2,7 +2,7 @@
 """Ask what system you want, then write it down so the build is reproducible.
 
 Nothing here runs GROMACS. It collects choices, checks each one against what the
-shipped structures and the geometry allow, and writes system.cfg. `f127 build`
+shipped structures and the geometry allow, and writes system.json. `f127 build`
 reads that file, so the same system can be rebuilt later or sent to someone else
 without repeating the questions.
 
@@ -424,12 +424,11 @@ def main():
         rows.append(("inside", n_shell, "",
                      "molecules in the hollow. count is the other simulation, "
                      "not the rest of these"))
-    out = Path(ask("write it to", "system.cfg", str))
-    config.write(out, rows,
-                 header="F127 system, written by ./f127 new.\n"
-                        "Edit this and run ./f127 run again.\n"
-                        "Lines beginning with # are ignored.")
-    cfg = config.read(out)
+    out = Path(ask("write it to", "system.json", str))
+    data = config.rows_to_json(rows, salts=tuple(ion_counts({}, 1).keys()) or
+                               ("NaCl", "KCl", "CaCl2", "MgCl2"))
+    config.write_json(out, data)
+    cfg = {k: v for k, v in config.read(out).items() if k != "notes"}
 
     print()
     ui.rule()
