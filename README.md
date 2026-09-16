@@ -6,8 +6,8 @@ resolution, with GROMACS and CHARMM36/CGenFF.
 Accompanies *Outer-core localization of a hydrophobic solute in Pluronic F127 micelles from
 all-atom molecular dynamics*.
 
-[Design a system in the browser](https://erjeon.github.io/f127-load/build.html) ·
-[Overview](https://erjeon.github.io/f127-load/)
+The system designer is `docs/build.html`: open it in a browser after cloning, pick the
+solute, box and ions, and download `system.json`. `docs/index.html` is the overview.
 
 ## What it does
 
@@ -57,7 +57,7 @@ pip install "MDAnalysis>=2.8" numpy matplotlib
 ./f127 pack run_pyrene_solution   # tar.gz that reruns anywhere
 ```
 
-The config is the same JSON the browser designer downloads, so either source builds the
+The config is the same JSON `docs/build.html` downloads, so either source builds the
 same way. It can live anywhere; give its path.
 
 ```json
