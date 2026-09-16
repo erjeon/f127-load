@@ -6,8 +6,8 @@ resolution, with GROMACS and CHARMM36/CGenFF.
 Accompanies *Outer-core localization of a hydrophobic solute in Pluronic F127 micelles from
 all-atom molecular dynamics*.
 
-The system designer is `docs/build.html`: open it in a browser after cloning, pick the
-solute, box and ions, and download `system.json`. `docs/index.html` is the overview.
+[Design a system in the browser](https://erjeon.github.io/f127-load/build.html) ·
+[Overview](https://erjeon.github.io/f127-load/)
 
 ## What it does
 
