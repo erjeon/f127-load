@@ -8,8 +8,6 @@
 # is for.
 #
 #   bash tests/param_smoke.sh <charmm-gui-dir> <RESNAME>
-#
-# Pukyong National University / NCHM Lab.  Eunryul Jeon <qlsguswjs@pukyong.ac.kr>
 set +u
 # a gmx already on PATH is the one the caller meant; see scripts/3_equilibrate.sh
 command -v gmx >/dev/null 2>&1 || source "${GMXRC:-/usr/local/gromacs/bin/GMXRC}" 2>/dev/null || true
@@ -22,7 +20,7 @@ NAME=$(basename "$DIR")
 W=$(mktemp -d)
 trap 'rm -rf "$W"' EXIT
 
-fail() { printf "  FAIL  %s\n" "$*"; [ -f "$W/$3" ] && tail -12 "$W/$3"; exit 1; }
+fail() { printf "  failed  %s\n" "$*"; [ -f "$W/$3" ] && tail -12 "$W/$3"; exit 1; }
 
 cp "$DIR/gromacs/$RES.itp" "$W/" 2>/dev/null || fail "no $RES.itp"
 cp "$DIR/gromacs/charmm36.itp" "$W/" 2>/dev/null || fail "no charmm36.itp"
@@ -120,8 +118,8 @@ LINCS=$(grep -c "LINCS WARNING" npt.log 2>/dev/null | head -1)
 CONSTR=$(awk '/Constr. rmsd/{getline; print $NF}' npt.log | tail -1)
 
 VERDICT=ok
-awk -v t="${T:-0}" 'BEGIN{exit !(t>295 && t<325)}' || VERDICT="TEMP OUT OF RANGE"
-[ "${LINCS:-0}" -gt 0 ] 2>/dev/null && VERDICT="LINCS WARNINGS"
+awk -v t="${T:-0}" 'BEGIN{exit !(t>295 && t<325)}' || VERDICT="temperature out of range"
+[ "${LINCS:-0}" -gt 0 ] 2>/dev/null && VERDICT="LINCS warnings"
 printf "atoms %5s  water %5s  Fmax %11s  T %6.1f K  LINCS %2s  rmsd %10s  %s\n" \
   "$(sed -n 2p solv.gro | tr -d ' ')" "$NW" "$FMAX" "${T:-0}" "${LINCS:-0}" \
   "${CONSTR:-?}" "$VERDICT"

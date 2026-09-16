@@ -5,13 +5,10 @@ gmx_banner
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 D=${1:?run_dir}; NS=${2:-100}; cd "$D"
 [[ -s npt.gro ]] || { echo "  [failed] no npt.gro in $D. Equilibrate first"; exit 1; }
-# bash arithmetic is integer only, so "0.5" was a syntax error rather than half a
-# nanosecond. A short test run is exactly when a fraction is wanted.
+# fractional ns are allowed, so the step count is computed in Python
 STEPS=$("$PY" -c "import sys; print(round(float(sys.argv[1])*500000))" "$NS")
-# The solute's residue name, read from the topology the build wrote. The mdp
-# files name a temperature-coupling group for it, and that name used to be PYR,
-# so every guest except pyrene stopped at grompp. Anything that is not the
-# polymer, water or an ion is the solute.
+# The solute's residue name, read from the topology: anything that is not the
+# polymer, water or an ion. The mdp files name a temperature-coupling group for it.
 guest_resn() {
   awk '/^\[ *molecules/{f=1;next}
        f && NF==2 && $1!="S1P1" && $1!="TIP3" && $1!="SOL" && $1!="SOD" &&
@@ -25,7 +22,7 @@ echo "  $NS ns = $STEPS steps"
 $GMX grompp -f prod.mdp -c npt.gro -t npt.cpt -p topol.top -n index.ndx -o prod.tpr -maxwarn 5 >grompp_prod.log 2>&1 \
   || { echo "  [failed] grompp before production. See $D/grompp_prod.log"
        tail -6 grompp_prod.log; exit 1; }
-# see 3_equilibrate.sh: -update gpu gives CUDA #700 here
+# -update gpu is left off, see 3_equilibrate.sh
 $GMX mdrun -deffnm prod $(mdrun_opt md) >prod.out 2>&1
 [[ -s prod.gro ]] || { echo "  [failed] production wrote no prod.gro. See prod.out"
                        tail -4 prod.out; exit 1; }

@@ -30,8 +30,8 @@ def main():
     c = config.read(sys.argv[1])
     chains = c.get("chains", c.get("n_chains"))
     box = float(c.get("box", c.get("box_nm")))
-    guest = c.get("guest")
-    n_guest = c.get("count", c.get("n_guest"))
+    guest = c.get("solute", c.get("guest"))
+    n_guest = c.get("n_solute", c.get("count", c.get("n_guest")))
     route = c.get("route")
 
     counts = c.get("ion_counts")

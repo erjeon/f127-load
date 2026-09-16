@@ -1,18 +1,14 @@
 #!/usr/bin/env bash
 # Checks only that the parameters run under GROMACS. It says nothing about loading.
 #   bash tests/smoke_test.sh ibuprofen
-# Use the gmx that is already on the PATH. Anyone running MD has set one up, and
-# choosing a different one for them is not this script's business: a version is
-# sometimes pinned on purpose. A GMXRC is sourced only when there is no gmx at
-# all. Which one is in use gets printed, because the failure that started this
-# was a silent swap from 2025.4 to 2022.3.
+# The gmx already on PATH is used, and a GMXRC is sourced only when there is none.
 set +u
 command -v gmx >/dev/null 2>&1 || source ${GMXRC:-/usr/local/gromacs/bin/GMXRC} 2>/dev/null || true
 set -uo pipefail
 GMX=${GMX:-gmx}
 echo "  using $($GMX --version 2>/dev/null | grep -m1 -o 'GROMACS.*' || echo "gmx (version unknown)")"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-G=${1:?guest name}; T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
+G=${1:?solute name}; T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 echo "=== smoke test: $G ==="
 bash "$ROOT/scripts/2_load.sh" --guest "$G" --n 2 --method shell --box 22 --out "$T/s" >"$T/load.log" 2>&1 \
   || { echo "  [failed] building the system"; tail -15 "$T/load.log"; exit 1; }

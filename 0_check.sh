@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # Detect the local GROMACS and Python environment and write compat.json.
 # Every later stage reads that file instead of assuming a version.
-#
-# Pukyong National University / NCHM Lab
-# Eunryul Jeon  <qlsguswjs@pukyong.ac.kr>
 
 set -uo pipefail
 
@@ -13,9 +10,7 @@ warn() { printf '[warn] %s\n'  "$*" >&2; }
 ok()   { printf '[ ok ] %s\n'  "$*"; }
 
 # ---------------------------------------------------------------- GROMACS ---
-# The run scripts source GMXRC before doing anything, so this check has to do the
-# same or it reports no GROMACS on a machine where the pipeline would run fine.
-# A login shell on a cluster node often has nothing on PATH.
+# Source a GMXRC only when no gmx is on PATH, as the run scripts do.
 if ! command -v gmx >/dev/null 2>&1 && [ -z "${GMX:-}" ]; then
     for rc in "${GMXRC:-}" /usr/local/gromacs/bin/GMXRC /usr/local/gromacs-*/bin/GMXRC \
               /opt/gromacs/bin/GMXRC "$HOME/gromacs/bin/GMXRC"; do
@@ -31,9 +26,8 @@ if [ -z "$GMX" ]; then
 fi
 [ -n "$GMX" ] || fail "no GROMACS binary on PATH. Source your GMXRC, or set GMX=/path/to/gmx"
 
-# Note: never pipe into an early-exiting filter (grep -q, grep -m1, head) while
-# pipefail is set.  The filter closes the pipe, the producer dies on SIGPIPE and
-# pipefail reports the whole pipeline as failed.  Capture first, then filter.
+# Note: capture first, then filter. Piping into grep -q or head under pipefail
+# kills the producer with SIGPIPE and fails the whole pipeline.
 GMX_HELP=$("$GMX" --version 2>/dev/null || true)
 VERSION_LINE=$(printf '%s\n' "$GMX_HELP" | grep -i 'GROMACS version' | head -1)
 GMX_VERSION=$(printf '%s' "$VERSION_LINE" | grep -oE '[0-9]{4}(\.[0-9]+)*' | head -1)
@@ -41,10 +35,8 @@ GMX_VERSION=$(printf '%s' "$VERSION_LINE" | grep -oE '[0-9]{4}(\.[0-9]+)*' | hea
 GMX_MAJOR=${GMX_VERSION%%.*}
 ok "GROMACS $GMX_VERSION  ($(command -v "$GMX" 2>/dev/null || printf '%s' "$GMX"))"
 
-# More than one GROMACS on a machine is normal, and the pipeline uses whichever
-# is on PATH. Half a day went into a run where 2022.3 was picked up and refused
-# the tpr that 2025.4 had written, so the others are listed here rather than
-# left to be discovered from a trjconv error.
+# More than one GROMACS on a machine is normal. The others are listed, since a
+# tpr written by a newer build cannot be read by an older one.
 OTHERS=""
 for rc in /usr/local/gromacs*/bin/GMXRC /opt/gromacs*/bin/GMXRC "$HOME"/gromacs*/bin/GMXRC; do
     [ -f "$rc" ] || continue
@@ -73,10 +65,8 @@ NEEDS_XTCOUT=false                # nstxtcout, only below 5.0, never reached her
 BAROSTAT="C-rescale"; [ "$HAS_CRESCALE" = true ] || BAROSTAT="Parrinello-Rahman"
 
 # ------------------------------------------------------------------- GPU ----
-# Two separate things have to be true. A card has to be present, and this gmx
-# has to have been built to use it. The Homebrew build on macOS is a normal
-# GROMACS with "GPU support: disabled", and asking it for -nb gpu is a hard
-# error rather than a fallback, so the run scripts read the same line.
+# A card has to be present and this gmx has to be built for it. A build with
+# "GPU support: disabled" treats -nb gpu as a hard error, not a fallback.
 GPU_OK=false
 GMX_GPU_BUILD=$(printf '%s\n' "$GMX_HELP" | grep -iE '^GPU support:' | sed 's/.*: *//')
 case "$GMX_GPU_BUILD" in
@@ -111,10 +101,8 @@ except Exception:
     pass
 PYEOF
 )
-# Only the analysis imports MDAnalysis. Building, minimising, equilibrating and
-# running do not, so a missing one is not a reason to report the tool unusable:
-# it stops four working stages from being tried. It is still loud, because the
-# alternative is finding out after the production run.
+# Only the analysis stage imports MDAnalysis, so a missing one is a warning,
+# not a failure.
 if [ -z "$MDA_VERSION" ]; then
     MDA_VERSION=none
     cat >&2 <<MSG
@@ -138,9 +126,8 @@ PYEOF
     ok "MDAnalysis $MDA_VERSION"
 fi
 
-# GROMACS 2025 writes tpx 137 and MDAnalysis only learned to read it in 2.8.
-# The analysis step falls back to the .gro beside the .tpr, which costs nothing
-# but exact masses, so this is a note and not a failure.
+# GROMACS 2025 writes tpx 137, which MDAnalysis reads only from 2.8. The analysis
+# falls back to the .gro beside the .tpr, so this is a note and not a failure.
 [ "$MDA_VERSION" = none ] || "$PY" - "$MDA_VERSION" <<'PYEOF' || warn \
   "MDAnalysis $MDA_VERSION cannot read the tpr GROMACS 2025 writes (tpx 137). The analysis will read the .gro instead and guess masses from atom names. Upgrade to 2.8 or newer to use the tpr."
 import sys

@@ -19,8 +19,7 @@ coulombtype             = PME
 rcoulomb                = 1.2
 tcoupl                  = v-rescale
 ; GUESTRESN is replaced with the solute's residue name when the run
-; directory is prepared. It used to read PYR, so every guest except
-; pyrene stopped at grompp with "Group PYR ... was not found".
+; directory is prepared.
 tc_grps                 = micelle GUESTRESN W_ION
 tau_t                   = 1.0 1.0 1.0
 ref_t                   = 310.15 310.15 310.15

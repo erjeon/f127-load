@@ -8,7 +8,6 @@
 #   ./f127 test   cfg       a short pass of all of it, to see that it works here
 #   ./f127 pack   dir       tar.gz of everything needed to rerun or to share
 #
-# Pukyong National University / NCHM Lab.  Eunryul Jeon <qlsguswjs@pukyong.ac.kr>
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PY=${PYTHON:-python3}

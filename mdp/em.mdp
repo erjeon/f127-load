@@ -3,9 +3,7 @@ emtol           = 1000.0
 emstep          = 0.01
 nsteps          = 50000
 
-; Minimization needs the final structure and the final force, nothing else.
-; Left at the default this step writes a full-precision trr, which for a large
-; box is tens of megabytes that no later step reads.
+; No trajectory output from minimisation.
 nstxout         = 0
 nstvout         = 0
 nstfout         = 0

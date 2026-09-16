@@ -210,7 +210,7 @@ system gets built. Nothing runs here.</p>
   <fieldset>
     <legend><span>2</span>Ions</legend>
     <p class="hint">Set as many as are wanted. Zero leaves a salt out. The button
-    fills in extracellular fluid, which is the mixture the paper used.</p>
+    fills in extracellular fluid.</p>
     <label class="row"><span class="lab">NaCl</span>
       <input type="number" class="salt" id="NaCl" value="0.154" min="0" max="1" step="0.001">
       <span class="unit" id="u-NaCl">M</span></label>
@@ -251,14 +251,12 @@ system gets built. Nothing runs here.</p>
     <legend><span>5</span>Where it starts</legend>
     <div class="radios">
       <label><input type="radio" name="route" value="solution" checked>
-        <span>Outside<small>Dispersed in bulk water, entering unaided. This is the
-        situation drug loading actually presents.</small></span></label>
+        <span>Outside<small>Dispersed in bulk water, entering unaided.</small></span></label>
       <label><input type="radio" name="route" value="shell">
         <span>Inside<small>A hollow shell is closed around it. The solute starts as deep
         as it can go.</small></span></label>
       <label><input type="radio" name="route" value="both">
-        <span>Both<small>Two simulations built side by side, one of each. Only the starting
-        point differs, which is what makes the comparison mean something.</small></span></label>
+        <span>Both<small>Two simulations built side by side, one of each.</small></span></label>
     </div>
 
     <div id="split" hidden>
@@ -280,15 +278,13 @@ system gets built. Nothing runs here.</p>
   <details>
     <summary>Where these numbers come from</summary>
     <div class="body">
-      <p>The weight fraction follows from the box edge, not the other way round. The
-      relation was checked against both systems in the accompanying paper: 34 chains in a
-      24.8 nm box comes to 4.7 wt%, and in a 17.0 nm box to 14.5 wt%.</p>
+      <p>The weight fraction follows from the box edge: 34 chains in a 17.0 nm box is
+      14.5 wt%, in a 24.8 nm box 4.7 wt%.</p>
       <p>Core volume goes as the number of chains, so the core radius goes as its cube root,
       scaled from the 3.99 nm measured on the shipped structure. The corona is one
       poly(ethylene oxide) block long however many chains there are, so its 3.0 nm is
       carried across rather than scaled.</p>
-      <p>The atom count is calibrated on the same run: 34 chains in a 17.0 nm box came to
-      488,823 atoms, and this reproduces it to 0.08 per cent.</p>
+      <p>The atom count is scaled from 488,823 atoms for 34 chains in a 17.0 nm box.</p>
       <p>The limit on the inside route is the radius the solute occupies when packed
       together, its vdW volume times 1.4, against the 1.5 nm hollow in the shell
       template.</p>
@@ -297,13 +293,9 @@ system gets built. Nothing runs here.</p>
   <details>
     <summary>Using a size other than the one that ships</summary>
     <div class="body">
-      <p>Only 34 chains ship with the tool. Another aggregation number has to be assembled
-      by the shell route, and that is not in <code>./f127 build</code> yet. For now, 34 is
-      the one to use.</p>
-      <p>For a smaller box, compress with <code>scripts/densify.py</code>, which removes water
-      and lets the barostat do the work, then use that structure as the host. Putting a
-      small box around an equilibrated structure folds the corona through the periodic
-      boundary, and energy minimisation diverges on the first step.</p>
+      <p>Only 34 chains ship with the tool. For a smaller box, remove water from an
+      equilibrated box with <code>scripts/densify.py</code> and use that structure as the
+      host, rather than shrinking the box around the structure.</p>
     </div>
   </details>
 </form>
@@ -611,12 +603,11 @@ function cfg() {
     n_chains: s.n, wt_percent: +s.wt.toFixed(2), box_nm: +s.box.toFixed(2),
     clearance_nm: +s.clearance.toFixed(2),
     salts: s.salts, ion_counts: ionCounts(s.salts, s.box),
-    guest: s.guest,
-    // n_guest is the solution system. "inside" is the shell one, which the
-    // hollow limits to far fewer, and the build reads it only for that route.
-    n_guest: s.route === "both" ? s.nOut : s.nG,
+    solute: s.guest,
+    // n_solute is the solution system; "inside" is the shell one.
+    n_solute: s.route === "both" ? s.nOut : s.nG,
     inside: s.route === "solution" ? undefined : (s.route === "both" ? s.nIn : s.nG),
-    guest_mM: +s.mM.toFixed(2), guest_wt_percent: +s.wtG.toFixed(2),
+    solute_mM: +s.mM.toFixed(2), solute_wt_percent: +s.wtG.toFixed(2),
     core_fill_percent: +s.fill.toFixed(1), route: s.route
   };
 }
@@ -857,8 +848,7 @@ compute();
   const home = Object.assign({}, view);
 
   // Which kind of atom, from its residue name. Anything that is not the polymer,
-  // water or an ion is the solute, whatever it is called, so a guest the page has
-  // never heard of still shows up in red.
+  // water or an ion is the solute.
   function classify(resn){
     if (PPO.has(resn)) return 0;
     if (PEO.has(resn)) return 1;

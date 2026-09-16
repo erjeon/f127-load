@@ -54,8 +54,8 @@ def write_json(path, data):
 
 def rows_to_json(rows, salts=()):
     """Turn the wizard's (key, value, unit, comment) rows into the designer's keys."""
-    keymap = {"chains": "n_chains", "box": "box_nm", "count": "n_guest",
-              "polymer": "wt_percent"}
+    keymap = {"chains": "n_chains", "box": "box_nm", "guest": "solute",
+              "count": "n_solute", "polymer": "wt_percent"}
     out, notes, salt = {}, {}, {}
     for key, value, unit, comment in rows:
         if not key:

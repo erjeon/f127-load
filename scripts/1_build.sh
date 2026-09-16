@@ -4,14 +4,13 @@
 #   bash scripts/1_build.sh system.json           build only, stops at the tpr
 #   bash scripts/1_build.sh --run system.json 100 build, equilibrate, run 100 ns
 #
-# route "both" builds two directories from one config so the pair differs only
-# in where the solute started, which is the comparison the paper rests on.
+# route "both" builds two directories from one config, differing only in where
+# the solute starts.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PY=${PYTHON:-python3}
 RUN=0; [[ ${1:-} == --run ]] && { RUN=1; shift; }
-# The equilibration length was reachable only through NPT_NS, which is not
-# somewhere anyone looks. It is an argument now, and the variable still works.
+# Equilibration length: --npt N, or the NPT_NS variable.
 NPT_NS=${NPT_NS:-2}
 ARGS=()
 while [[ $# -gt 0 ]]; do
@@ -22,17 +21,13 @@ while [[ $# -gt 0 ]]; do
 done
 set -- "${ARGS[@]+"${ARGS[@]}"}"
 NS=${2:-100}
-# Naming a file that is not there used to fall through to system.cfg and then to
-# system.json in the current directory, so a mistyped path quietly built whatever
-# config happened to be lying around. The two defaults apply only when no file
-# was named at all.
+# A named config has to exist. The defaults apply only when none was named.
 if [[ -n ${1:-} ]]; then
   CFG=$1
   [[ -f $CFG ]] || { echo "[failed] no such config: $CFG"; exit 1; }
 else
-  # With nothing named, look where a config actually ends up: here, then the
-  # download folder. Reading each candidate is what makes this safe, so a JSON
-  # that is not one of these is passed over rather than half-built.
+  # With nothing named, look here and then in the download folder. Each
+  # candidate is parsed, so a JSON that is not a config is passed over.
   FOUND=$("$PY" "$ROOT/scripts/find_config.py" --explain 2>/dev/null)
   if [[ -z $FOUND ]]; then
     echo "[failed] no config named, and none found in $(pwd) or ~/Downloads."
@@ -51,9 +46,7 @@ export SALTS
 
 [[ $N_CHAINS == 34 ]] || { echo "[failed] only 34 chains ship with the tool. Assembling another number is not implemented yet."; exit 1; }
 
-# What this is going to cost, before it starts costing it. The rates are
-# measured on the 577,146-atom loaded system, so they are the right order for
-# anything this tool builds.
+# Estimated wall time, from rates measured on a 577,146-atom loaded system.
 if [[ $RUN == 1 ]]; then
   GPU=no; GPU_NAME=""
   command -v gmx >/dev/null 2>&1 && gmx --version 2>/dev/null \
@@ -62,7 +55,7 @@ if [[ $RUN == 1 ]]; then
   "$PY" - "$NPT_NS" "$NS" "$GPU" "$GPU_NAME" <<'PLAN'
 import sys
 npt, prod, gpu, name = float(sys.argv[1]), float(sys.argv[2]), sys.argv[3] == "yes", sys.argv[4].strip()
-# ns/day on the 18 nm default box, as reported by people who ran the tool.
+# measured ns/day on the 18 nm default box
 measured = [("5090", 106.3, "one RTX 5090"), ("3090", 43.1, "one RTX 3090"), ("3070", 39.4, "one RTX 3070")]
 if gpu:
     rate, where = 43.1, "one RTX 3090"
@@ -103,8 +96,7 @@ for M in $METHODS; do
   [[ -s $OUT/ions.gro ]] || { echo "[failed] $OUT was not built"; exit 1; }
   cp "$CFG" "$OUT/$(basename "$CFG")"
   if [[ $RUN == 1 ]]; then
-    # 2 ns of NpT is right on a GPU and most of a day on a laptop, so the
-    # length is settable for anyone checking that the pipeline runs at all.
+    # the equilibration length is settable so a quick check need not run 2 ns
     bash "$ROOT/scripts/3_equilibrate.sh" "$OUT" "$NPT_NS" || exit 1
     bash "$ROOT/scripts/4_production.sh" "$OUT" "$NS" || exit 1
   else

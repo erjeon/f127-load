@@ -2,41 +2,32 @@
 # Works out which gmx to call, how many threads it may use, and whether that
 # gmx can talk to a GPU at all.
 #
-# Use the gmx that is already on the PATH. Anyone running MD has set one up, and
-# choosing a different one for them is not this script's business: a version is
-# sometimes pinned on purpose. A GMXRC is sourced only when there is no gmx at
-# all. Which one is in use gets printed, because the failure that started this
-# was a silent swap from 2025.4 to 2022.3.
+# The gmx already on PATH is used, and a GMXRC is sourced only when there is
+# none. Which one is in use gets printed.
 set +u
 command -v gmx >/dev/null 2>&1 || source ${GMXRC:-/usr/local/gromacs/bin/GMXRC} 2>/dev/null || true
 set -uo pipefail
 GMX=${GMX:-gmx}
-# 0_check.sh honours PYTHON= already. The run scripts called python3 directly,
-# so pointing the check at a venv and the run at the system Python was possible.
+# PYTHON= picks the interpreter, as in 0_check.sh.
 PY=${PYTHON:-python3}
 GMX_VERSION_TEXT="$($GMX --version 2>/dev/null || true)"
 
-# A GROMACS built without CUDA stops at "-nb gpu was requested, but the GROMACS
-# binary has been built without GPU support". The Homebrew build on macOS is one
-# of those, so the flags cannot be hard-coded. gmx reports what it can do.
+# A GROMACS built without GPU support stops on -nb gpu, so the flags follow
+# what gmx --version reports.
 if [[ -z ${GMX_GPU:-} ]]; then
   if grep -qiE '^GPU support: *(CUDA|OpenCL|SYCL|HIP)' <<<"$GMX_VERSION_TEXT"
   then GMX_GPU=yes; else GMX_GPU=no; fi
 fi
 
-# 16 threads used to be hard-coded, which oversubscribes a laptop and leaves a
-# 64-core node idle.
+# Thread count from the machine, capped at 16.
 if [[ -z ${NTOMP:-} ]]; then
   NTOMP=$( (command -v nproc >/dev/null 2>&1 && nproc) \
            || sysctl -n hw.ncpu 2>/dev/null || echo 8 )
   (( NTOMP > 16 )) && NTOMP=16
 fi
 
-# $1 is em or md. Minimisation gains nothing from PME on the GPU.
-# C-rescale arrived in GROMACS 2021 and both mdp files ask for it. On an older
-# gmx grompp stops with an invalid enum, so the sed that sets nsteps also swaps
-# the barostat. Parrinello-Rahman is the documented substitute and 0_check.sh
-# already says which one is in use.
+# C-rescale needs GROMACS 2021. On an older gmx the sed that sets nsteps also
+# swaps the barostat to Parrinello-Rahman.
 GMX_MAJOR=$(grep -m1 -oE '[0-9]{4}' <<<"$(grep -m1 -i 'GROMACS version' <<<"$GMX_VERSION_TEXT")")
 if [[ -n ${GMX_MAJOR:-} && $GMX_MAJOR -lt 2021 ]]; then
   BAROSTAT_SED='s/^pcoupl  *=.*C-rescale/pcoupl                  = Parrinello-Rahman/'
@@ -44,6 +35,7 @@ else
   BAROSTAT_SED=''
 fi
 
+# $1 is em or md. Minimisation gains nothing from PME on the GPU.
 mdrun_opt() {
   if [[ -n ${MDRUN_OPT:-} ]]; then echo "$MDRUN_OPT"; return; fi
   local o="-ntmpi 1 -ntomp $NTOMP"

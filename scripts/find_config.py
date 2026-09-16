@@ -27,7 +27,7 @@ from f127load import config
 PLACES = [Path.cwd(), Path.home() / "Downloads", Path.home() / "Desktop",
           Path.home() / "다운로드"]
 NAMES = ("system.cfg", "system.json")
-REQUIRED = ("guest", "route")
+REQUIRED = ("route",)
 
 
 def looks_like_one(p):
@@ -39,7 +39,8 @@ def looks_like_one(p):
         return False
     # box and chains under either spelling, and a solute, and where it starts
     has_box = any(k in c for k in ("box", "box_nm"))
-    return has_box and all(k in c for k in REQUIRED)
+    has_solute = any(k in c for k in ("solute", "guest"))
+    return has_box and has_solute and all(k in c for k in REQUIRED)
 
 
 def ago(p):

@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # Build a solute-loaded F127 micelle system.
 #   bash scripts/2_load.sh --guest ibuprofen --n 8 --method shell --box 24.8 --out run_ibu
-# Sourcing a GMXRC unconditionally put GROMACS 2022.3 in front of a 2025.4
-# already on PATH, and trjconv then refused the 2025 tpr it was handed.
 source "$(dirname "${BASH_SOURCE[0]}")/_gmxenv.sh"
 gmx_line
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -20,25 +18,19 @@ else
     --seed) SEED=$2; shift 2;;    *) echo "unknown: $1"; exit 1;; esac; done
 fi
 [[ -n $GUEST ]] || { echo "usage: 2_load.sh GUEST [N] [shell|solution] [OUTDIR]"; exit 1; }
-# "solution" is what the paper and the documentation call it, "soak" is the old name
+# "solution" is the documented name, "soak" the internal one
 [[ $METHOD == solution ]] && METHOD=soak
 OUT=${OUT:-run_${GUEST}_${METHOD}}
-# the shell route closes a template that needs the larger box, the solution route
-# starts from the equilibrated micelle and needs only its own
-# Both routes start from a structure equilibrated in a 24.8 nm box, so that is
-# the default for both. A smaller box is reached afterwards with densify.py,
-# which removes water and lets the barostat compress, rather than by cutting the
-# box around a structure that does not fit it.
-# each host carries its own equilibrated box, and going below it folds the corona
+# Each host carries the box it was equilibrated in, which is the default. A
+# denser system is reached afterwards with densify.py, which removes water and
+# lets the barostat compress.
 [[ -n $BOX ]] || { [[ $METHOD == shell ]] && BOX=25.0 || BOX=24.8; }
 
 LIB="$ROOT/library/$GUEST"
 [[ -d $LIB ]] || { echo "[failed] no library/$GUEST"; exit 1; }
 RESN=$(cat "$LIB/RESNAME.txt" 2>/dev/null | tr -d '[:space:]')
 if [[ -z ${RESN:-} ]]; then
-  # Six of the library folders hold a structure and nothing else. They are input
-  # for parameter generation, not molecules that can be built, and saying only
-  # that RESNAME.txt is missing sent people off to write one by hand.
+  # a folder with a structure and no RESNAME.txt has no parameters yet
   echo "[failed] $GUEST has no force field parameters yet."
   echo "  $LIB holds a structure to generate them from and nothing else."
   echo "  Put $LIB/$GUEST.mol2 through CHARMM-GUI Ligand Reader and Modeler,"
@@ -47,9 +39,7 @@ if [[ -z ${RESN:-} ]]; then
   echo "  library/README.md lists which molecules are ready."
   exit 1
 fi
-# ff_*.itp is the force field fragment, not the molecule. Picking the first
-# .itp by name grabbed it whenever the residue name sorts after "ff", which
-# is why paclitaxel broke and curcumin did not.
+# ff_*.itp is the force field fragment, not the molecule
 ITP=$(ls "$LIB"/*.itp 2>/dev/null | grep -v "/ff_" | head -1)
 [[ -n ${ITP:-} ]] || { echo "[failed] no CGenFF itp in $LIB. Put the CHARMM-GUI output there."; exit 1; }
 CRD=""
@@ -57,9 +47,8 @@ for c in "$LIB/${RESN}.pdb" "$LIB/${RESN}.gro" "$LIB/${GUEST}.pdb" "$LIB/${GUEST
   [[ -f $c ]] && { CRD=$c; break; }
 done
 [[ -n $CRD ]] || { echo "[failed] no coordinates in $LIB. Put the ${RESN}.pdb CHARMM-GUI returned there."; exit 1; }
-# The topology and the coordinates must describe the same atoms in the same order.
-# A structure built from SMILES has the right count but generic names, so counting
-# alone does not catch a mismatch. Compare the names.
+# The topology and the coordinates must list the same atoms in the same order,
+# so the names are compared, not only the counts.
 "$PY" - "$ITP" "$CRD" <<'CHK' || exit 1
 import re, sys
 itp, crd = sys.argv[1], sys.argv[2]
@@ -79,12 +68,9 @@ if bad:
 print(f"  topology and coordinates agree on {len(a)} atoms")
 CHK
 
-# The residue name has to read the same in four places: the file that declares
-# it, the moleculetype grompp looks up, the residue column of the topology and
-# the residue column of the coordinates. Only the atom names were compared
-# before, so a guest whose parameters came from another project under a
-# different name built for five minutes and then stopped at grompp with
-# "No such moleculetype". Doxorubicin went round eight times over exactly that.
+# The residue name has to agree between RESNAME.txt, the moleculetype, the
+# residue column of the topology and that of the coordinates, or grompp stops
+# with "No such moleculetype".
 "$PY" - "$RESN" "$ITP" "$CRD" <<'CHK' || exit 1
 import re, sys
 resn, itp, crd = sys.argv[1], sys.argv[2], sys.argv[3]
@@ -122,9 +108,7 @@ print(f"  residue name {resn} agrees in the topology and the coordinates")
 CHK
 
 case $METHOD in
-  # f127_shell_template.gro still carries the eight pyrene it was built with,
-  # so loading a different guest into it would silently give a system holding
-  # both. f127_shell_bare.gro is the same shell with those removed.
+  # f127_shell_bare.gro is the shell template with its original pyrene removed
   shell) HOST="$ROOT/data/f127_shell_bare.gro";;
   soak)  HOST="$ROOT/data/f127_micelle_34.gro";;
   *) echo "method must be shell or solution"; exit 1;;
@@ -132,19 +116,16 @@ esac
 
 mkdir -p "$OUT"; cd "$OUT"
 ln -sfn "$ROOT/data/toppar" toppar; mkdir -p ff; cp "$ITP" ff/
-# a guest usually needs atom types the shipped force field does not carry,
-# because that file holds only what the polymer and water use
+# a solute usually needs atom types the shipped force field does not carry
 FF=$(ls "$LIB"/ff_*.itp 2>/dev/null | head -1)
 [[ -n ${FF:-} ]] && cp "$FF" ff/
 echo "[1/4] placing the solute ($METHOD, $N x $RESN)"
 "$PY" "$ROOT/scripts/place_guest.py" "$HOST" "$CRD" "$N" "$METHOD" loaded.gro "$SEED" "$BOX" || exit 1
 $GMX editconf -f loaded.gro -o boxed.gro -c -box $BOX $BOX $BOX >editconf.log 2>&1
 
-# editconf sets the box and centres the contents, but it does not bring back
-# anything that now lies outside. With a box smaller than the one the structure
-# was equilibrated in, chain tips stick out by a couple of nm, solvate fills the
-# space they will occupy once wrapped, and the first step of minimisation sees
-# an infinite force. Folding them into the box first is what avoids that.
+# editconf leaves atoms outside the new box where they are. solvate would then
+# fill the space their periodic images occupy, so whole molecules are wrapped
+# into the box first.
 OUTSIDE=$("$PY" "$ROOT/scripts/wrap_into_box.py" boxed.gro boxed.gro) || exit 1
 [[ $OUTSIDE == "0" ]] || echo "  wrapped $OUTSIDE atom(s) back into the box"
 
@@ -170,23 +151,13 @@ TOP
 echo "[2/4] solvating"
 $GMX solvate -cp boxed.gro -cs "$ROOT/data/tip3p.gro" -o solv.gro -p topol.top >solvate.log 2>&1 \
   || { echo "[failed] solvate. See $(pwd)/solvate.log"; tail -6 solvate.log; exit 1; }
-# solvate takes its radii from atom names, and a CHARMM-GUI name it does not
-# recognise gets a guessed one that is too small. Paclitaxel came out with water
-# 0.137 nm from a heavy atom and minimisation pulled it apart on the first step.
+# solvate guesses a radius for atom names it does not know, and the guess can
+# be too small, so water placed inside the solute is removed.
 "$PY" "$ROOT/scripts/trim_close_water.py" solv.gro topol.top || exit 1
-# Ions. SALTS is "name:cation:anion:n_cation:n_anion:cation_charge" entries
-# separated by commas, written by the wizard. genion places one cation and one
-# anion type per call and rewrites topol.top as it goes, so each salt needs its
-# own grompp first.
-#
-# The charge has to be passed. genion defaults to -pq 1 and does not read the
-# charge from the ion topology, so a divalent cation is counted as singly
-# charged: asking for 8 Mg and 16 Cl gave 16 Mg and 16 Cl and a system at +16.
-#
-# Neutralising is a separate pass at the end with sodium and chloride, rather
-# than -neutral hung on the last salt. That keeps the requested stoichiometry
-# exact and puts any residual charge, which comes from the solute rather than
-# from the salt, somewhere predictable.
+# SALTS is "name:cation:anion:n_cation:n_anion:cation_charge" entries separated
+# by commas. genion places one salt per call, so each needs its own grompp, and
+# the cation charge is passed with -pq because genion does not read it from the
+# topology. Neutralising is a separate final pass with sodium and chloride.
 if [[ -n ${SALTS:-} ]]; then
   IFS=',' read -ra ENTRIES <<< "$SALTS"
   IN=solv.gro
@@ -219,9 +190,6 @@ fi
 echo "[4/4] index"
 "$PY" "$ROOT/scripts/mkndx.py" ions.gro index.ndx || exit 1
 tail -6 topol.top
-# genion runs once per salt and GROMACS backs up ions.gro, ions.tpr and
-# topol.top on every pass. A four-salt build left 130 MB of #file.N# behind.
-# find -name '#*#' does not match these, the trailing # is part of the name but
-# the shell still needs the leading one quoted.
+# remove the #file.N# backups GROMACS leaves behind, one set per genion pass
 rm -f ./\#*\# 2>/dev/null
 echo "done: $(pwd)"

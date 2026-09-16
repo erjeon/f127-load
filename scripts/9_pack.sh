@@ -13,21 +13,16 @@ D=${1:?run_dir}
 NAME=$(basename "$D")
 STAGE=$(mktemp -d)
 mkdir -p "$STAGE/$NAME"
-# The repository's mdp files first, so em.mdp travels, then the run's own on top
-# of them. The order used to be the other way round, which meant the bundle
-# shipped the templates with nsteps unset and GUESTRESN unsubstituted rather than
-# the files the run was actually built from.
+# The repository's mdp files first, so em.mdp travels, then the run's own on top.
 cp "$ROOT"/mdp/*.mdp "$STAGE/$NAME/" 2>/dev/null
 for f in system.cfg system.json topol.top index.ndx ions.gro em.tpr npt.gro prod.tpr \
          npt.mdp prod.mdp; do
   [[ -f $D/$f ]] && cp "$D/$f" "$STAGE/$NAME/"
 done
-# compat.json is written where ./f127 check was run, which is not the run
-# directory, so it was listed above and never found.
+# compat.json is written where ./f127 check was run, not in the run directory
 [[ -f $ROOT/compat.json ]] && cp "$ROOT/compat.json" "$STAGE/$NAME/"
-# toppar is a symlink into the repo and ff/ holds the guest topology together
-# with the parameters CHARMM-GUI supplied for it. Both have to travel, or the
-# bundle grompps on the machine that made it and nowhere else.
+# toppar is a symlink into the repo and ff/ holds the solute topology, so both
+# are copied in for the bundle to grompp elsewhere.
 for sub in toppar ff; do
   [[ -d $D/$sub ]] || continue
   mkdir -p "$STAGE/$NAME/$sub"

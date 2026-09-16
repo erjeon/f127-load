@@ -7,20 +7,9 @@
 # Not the same thing as 9_pack.sh, which bundles one finished run. This bundles
 # the tool.
 #
-# What is left out and why:
-#   run_*/          a build's output. One of them is 300 MB.
-#   compat.json     written by ./f127 check, and it describes this machine
-#   system.cfg
-#   system.json     ★ a config left in the root is picked up when the path given
-#                   on the command line does not exist, so shipping one means
-#                   the person builds a system they did not ask for. That is
-#                   exactly what happened here.
-#   mdout.mdp       grompp leaves it behind
-#   __pycache__     and .pyc
-#   .git            the history is on GitHub, and it is larger than the tool
-#   .DS_Store ._*   macOS
-#
-# Pukyong National University / NCHM Lab.  Eunryul Jeon <qlsguswjs@pukyong.ac.kr>
+# Left out: run_*/ (build output), compat.json (describes one machine),
+# system.cfg and system.json (a config in the root would be picked up in place
+# of a mistyped path), mdout.mdp, __pycache__, .git, .DS_Store and ._* files.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUTDIR=${1:-$HOME/Downloads}

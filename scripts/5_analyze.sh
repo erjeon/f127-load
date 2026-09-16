@@ -2,16 +2,13 @@
 # The eight standard analyses, plus figures.  bash scripts/5_analyze.sh run_dir [--begin ps]
 # --begin must sit after equilibration. Averaging the whole trajectory mixes the
 # collapsing structure with the equilibrated one and puts a hole in the core density.
-# Sourcing a GMXRC unconditionally put GROMACS 2022.3 in front of a 2025.4
-# already on PATH, and trjconv then refused the 2025 tpr it was handed.
 source "$(dirname "${BASH_SOURCE[0]}")/_gmxenv.sh"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 D=${1:?run_dir}; shift; BEG=0
 while [[ $# -gt 0 ]]; do case $1 in --begin) BEG=$2; shift 2;; *) shift;; esac; done
 cd "$D"; O=results; mkdir -p $O
 gmx_line
-# Every analysis below imports MDAnalysis, and the pbc step that feeds them takes
-# minutes. Finding out afterwards that the import fails is the worst order.
+# check the imports before the pbc step, which takes minutes
 "$PY" -c "import MDAnalysis, matplotlib" 2>/dev/null || {
   echo "  [failed] $PY cannot import MDAnalysis and matplotlib."
   echo "           The simulation is fine, only the analysis needs them."
@@ -19,18 +16,15 @@ gmx_line
   echo "           or point at one you have:  PYTHON=/path/to/venv/bin/python"
   exit 1
 }
-# POT, CAL and MG were missing from this list. They happen to sit after the guest
-# in [ molecules ], so the first match is still right, but only by position.
+# the solute is whatever is not the polymer, water or an ion
 RESN=$(awk '/^\[ *molecules/{f=1;next}
             f && NF==2 && $1!="S1P1" && $1!="TIP3" && $1!="SOL" && $1!="SOD" &&
             $1!="CLA" && $1!="POT" && $1!="CAL" && $1!="MG" {print $1; exit}' topol.top)
-echo "  guest = $RESN, begin = $BEG ps"
+echo "  solute = $RESN, begin = $BEG ps"
 
 if [[ ! -s $O/proc.xtc ]]; then
   echo "[1/8] periodic boundary"
-  # Everything downstream reads proc.xtc. When this step failed the remaining
-  # seven ran anyway, each writing only a log saying the file was missing, and
-  # the run ended with no figures and no error.
+  # everything downstream reads proc.xtc, so a failure here stops the run
   echo System | $GMX trjconv -s prod.tpr -f prod.xtc -n index.ndx -pbc whole -o $O/whole.xtc >$O/pbc1.log 2>&1 \
     || { echo "  [failed] trjconv -pbc whole. See $O/pbc1.log"; exit 1; }
   printf 'micelle\nSystem\n' | $GMX trjconv -s prod.tpr -f $O/whole.xtc -n index.ndx -pbc mol -center -o $O/proc.xtc >$O/pbc2.log 2>&1 \
@@ -38,11 +32,8 @@ if [[ ! -s $O/proc.xtc ]]; then
   rm -f $O/whole.xtc
 fi
 [[ -s $O/proc.xtc ]] || { echo "  [failed] $O/proc.xtc was not written"; exit 1; }
-# These three wrote their errors to a log nobody read and the run carried on,
-# which is how the RDF and the interaction energy came to be broken for every
-# system without anyone noticing. core, corona and water are written by
-# scripts/mkndx.py; TIP3 was asked for here and never existed, because an index
-# supplied with -n replaces the moleculetype names.
+# core, corona and water are groups written by scripts/mkndx.py. An index given
+# with -n replaces the moleculetype names, so TIP3 cannot be used here.
 echo "[2/8] Rg"
 echo micelle | $GMX gyrate -s prod.tpr -f $O/proc.xtc -n index.ndx -b $BEG -o $O/rg.xvg >$O/rg.log 2>&1 \
   || echo "  [failed] gyrate. See $D/$O/rg.log"

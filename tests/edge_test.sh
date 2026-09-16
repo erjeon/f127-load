@@ -7,15 +7,8 @@
 # larger than the micelle. The most is the shell route filled to its limit with
 # the four-salt physiological mixture.
 #
-# The small box is asked for but not obtained. The host micelle was equilibrated
-# in 25 nm, so anything smaller is refused and built at 25 nm with a warning.
-# Building a genuinely smaller box needs densify.py to compress the host first,
-# which this test does not cover. Between them they exercise the placement, the ion mixing, the
-# wrapping into a smaller box and the pressure coupling.
-#
-# This is the test that found three real defects: a failed stage that did not
-# stop the run, a shell capacity that accepted more molecules than could be
-# placed, and a GROMACS version being swapped underneath the caller.
+# Between them they exercise the placement, the ion mixing, the wrapping into a
+# smaller box and the pressure coupling.
 set -uo pipefail
 PY=${PYTHON:-python3}
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -27,9 +20,7 @@ mk() {  # name, answers
   [[ -s $1 ]] || { echo "[failed] the wizard did not write $1"; exit 1; }
 }
 mk "$ROOT/edge_min.cfg" '34\n2\n30.0\n4\n5\n1\n1\n1\n'"$ROOT"'/edge_min.cfg\n'
-# 28 rather than the 36 asked for before. The builder places at random and
-# rejects overlaps, so it saturates at 32 for pyrene however many are asked for,
-# and the wizard now stops below that. Asking for more only tests the refusal.
+# 28 is just under what the hollow holds for pyrene
 mk "$ROOT/edge_max.cfg" '34\n1\n14.5\n1\n3\n5\n1\n28\n2\n'"$ROOT"'/edge_max.cfg\n'
 
 fail=0
