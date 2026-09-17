@@ -75,8 +75,14 @@ same way. It can live anywhere; give its path.
 `route` is `solution`, `shell` or `both`. Everything lands in `run_<molecule>_<route>/`:
 the topology, the tpr and the xtc. Change a number in the config and run again.
 
-`./f127 analyze` writes `results/` inside the run directory: the numbers as `.xvg`/`.dat`
-and nine figures in `results/figures/`.
+`./f127 analyze` writes `results/` inside the run directory:
+
+```
+results/            the numbers, one file per analysis (.xvg, .dat), and localisation.txt
+results/figures/    the nine figures below
+results/logs/       GROMACS logs of each step
+results/work/       intermediates (centred trajectory, rerun files); safe to delete
+```
 
 | figure | what it shows |
 |---|---|
