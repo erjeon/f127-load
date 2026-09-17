@@ -6,8 +6,8 @@ resolution, with GROMACS and CHARMM36/CGenFF.
 Accompanies *Outer-core localization of a hydrophobic solute in Pluronic F127 micelles from
 all-atom molecular dynamics*.
 
-[Design a system in the browser](https://erjeon.github.io/f127-load/build.html) ·
-[Overview](https://erjeon.github.io/f127-load/)
+[Design a system in the browser](https://nchmlab.github.io/f127-load/build.html) ·
+[Overview](https://nchmlab.github.io/f127-load/)
 
 ## What it does
 
@@ -40,7 +40,7 @@ Throughput on the default 18 nm box (about 580,000 atoms):
 ## Install
 
 ```bash
-git clone https://github.com/erjeon/f127-load
+git clone https://github.com/nchmlab/f127-load
 cd f127-load
 python3 -m venv venv && source venv/bin/activate
 pip install "MDAnalysis>=2.8" numpy matplotlib
