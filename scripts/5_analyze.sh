@@ -8,6 +8,14 @@ D=${1:?run_dir}; shift; BEG=0
 while [[ $# -gt 0 ]]; do case $1 in --begin) BEG=$2; shift 2;; *) shift;; esac; done
 cd "$D"; O=results; mkdir -p $O
 gmx_line
+# core, corona, water and ions are index groups scripts/mkndx.py writes. A run
+# built before they existed gets them added here.
+if ! grep -q '^\[ *core *\]' index.ndx 2>/dev/null; then
+  echo "  index.ndx has no core/corona/water groups, rebuilding it with scripts/mkndx.py"
+  cp index.ndx index.ndx.bak 2>/dev/null
+  "$PY" "$ROOT/scripts/mkndx.py" "$( [[ -s ions.gro ]] && echo ions.gro || echo npt.gro )" index.ndx \
+    || { echo "  [failed] mkndx.py could not rebuild index.ndx"; exit 1; }
+fi
 # check the imports before the pbc step, which takes minutes
 "$PY" -c "import MDAnalysis, matplotlib" 2>/dev/null || {
   echo "  [failed] $PY cannot import MDAnalysis and matplotlib."

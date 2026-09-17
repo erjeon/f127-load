@@ -75,8 +75,8 @@ same way. It can live anywhere; give its path.
 `route` is `solution`, `shell` or `both`. Everything lands in `run_<molecule>_<route>/`:
 the topology, the tpr and the xtc. Change a number in the config and run again.
 
-`./f127 analyze` writes `analysis/` inside the run directory: the numbers as `.xvg`/`.dat`
-and nine figures in `analysis/figures/`.
+`./f127 analyze` writes `results/` inside the run directory: the numbers as `.xvg`/`.dat`
+and nine figures in `results/figures/`.
 
 | figure | what it shows |
 |---|---|
