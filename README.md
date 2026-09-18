@@ -73,7 +73,7 @@ same way. It can live anywhere; give its path.
 ```
 
 `route` is `solution`, `shell` or `both`. Everything lands in `run_<molecule>_<route>/`:
-the topology, the tpr and the xtc. Change a number in the config and run again.
+the topology, the tpr and the xtc. Open `ions.gro` or `npt.gro` in VMD or PyMOL to look at the build. Change a number in the config and run again.
 
 `./f127 analyze` writes `results/` inside the run directory:
 
